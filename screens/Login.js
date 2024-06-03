@@ -42,7 +42,7 @@ export default function Login({ navigation }) {
             style={styles.input}
           />
           <TextInput
-            placeholder="Contraseña"
+            placeholder="Password"
             value={contrasena}
             onChangeText={setContrasena}
             secureTextEntry
