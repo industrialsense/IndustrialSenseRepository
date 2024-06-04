@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Text, View, StyleSheet, TextInput, Button, Alert, ScrollView, TouchableOpacity } from "react-native";
+import { Text, View, StyleSheet, ScrollView, Image, Alert } from "react-native";
+import { TextInput, Button, IconButton } from "react-native-paper";
 import * as SQLite from 'expo-sqlite';
 
 export default function Register({ navigation }) {
@@ -105,56 +106,81 @@ export default function Register({ navigation }) {
   };
 
   return (
-    <ScrollView>
-      <View style={styles.page}>
-        <View style={styles.container}>
-          <Text>Registro</Text>
-          <View style={styles.formulario}>
-            <Text style={styles.label}>Correo Electrónico :</Text>
+    <ScrollView style={styles.page}>
+      <View style={styles.container}>
+        <Image source={require('../assets/Logo.png')} style={styles.logo} />
+        <Text style={styles.title}>Registro</Text>
+        <View style={styles.formulario}>
+          <TextInput
+            label="Correo Electrónico"
+            value={correo}
+            onChangeText={setCorreo}
+            style={styles.input}
+            mode="outlined"
+            theme={{ colors: { primary: '#007BFF', text: '#000', placeholder: '#757575', background: '#fff' } }}
+            outlineColor="#333333" // Borde gris oscuro
+            activeOutlineColor="#007BFF" // Borde azul al estar activo
+          />
+          <View style={styles.passwordContainer}>
             <TextInput
-              style={styles.input}
-              placeholder="correo@gmail.com"
-              value={correo}
-              onChangeText={setCorreo}
+              label="Contraseña"
+              value={contrasena}
+              onChangeText={setContrasena}
+              secureTextEntry
+              style={[styles.input, styles.passwordInput]}
+              mode="outlined"
+              theme={{ colors: { primary: '#007BFF', text: '#000', placeholder: '#757575', background: '#fff' } }}
+              outlineColor="#333333" // Borde gris oscuro
+              activeOutlineColor="#007BFF" // Borde azul al estar activo
             />
-            <Text style={styles.label}>Contraseña :</Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Ingresa tu contraseña"
-                value={contrasena}
-                onChangeText={setContrasena}
-                secureTextEntry
+            {isPasswordValid && (
+              <IconButton
+                icon="check-circle"
+                color="green"
+                size={24}
+                style={styles.checkMark}
               />
-              {isPasswordValid && <Text style={styles.checkMark}>✔️</Text>}
-            </View>
-            <Text style={styles.label}>Confirmar Contraseña :</Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Confirma tu contraseña"
-                value={confirmarContrasena}
-                onChangeText={setConfirmarContrasena}
-                secureTextEntry
-              />
-              {doPasswordsMatch && <Text style={styles.checkMark}>✔️</Text>}
-            </View>
+            )}
           </View>
-          <View style={styles.boton}>
-            <Button title="Registrar" onPress={handleRegister} />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              label="Confirmar Contraseña"
+              value={confirmarContrasena}
+              onChangeText={setConfirmarContrasena}
+              secureTextEntry
+              style={[styles.input, styles.passwordInput]}
+              mode="outlined"
+              theme={{ colors: { primary: '#007BFF', text: '#000', placeholder: '#757575', background: '#fff' } }}
+              outlineColor="#333333" // Borde gris oscuro
+              activeOutlineColor="#007BFF" // Borde azul al estar activo
+            />
+            {doPasswordsMatch && (
+              <IconButton
+                icon="check-circle"
+                color="green"
+                size={24}
+                style={styles.checkMark}
+              />
+            )}
           </View>
         </View>
-        {/* Componente para mostrar los datos de la base de datos */}
-        <View style={styles.container}>
-          <Text>Datos de la Base de Datos</Text>
-          {usuarios && usuarios.map(usuario => (
-            <Text key={usuario.id}>{usuario.correo}</Text>
-          ))}
-        </View>
+        <Button mode="contained" onPress={handleRegister} style={styles.botonAcceder} labelStyle={styles.botonAccederText}>
+          Registrar
+        </Button>
+        <Button mode="text" onPress={() => navigation.navigate('Login')} style={styles.botonRegistrarse} labelStyle={styles.botonRegistrarseText}>
+          ¿Ya tienes una cuenta?
+        </Button>
       </View>
-      <View style={styles.boton}>
-        <Button title="Eliminar Datos de Usuarios" onPress={handleDeleteData} />
+      {/* Componente para mostrar los datos de la base de datos */}
+      <View style={styles.container}>
+        <Text>Datos de la Base de Datos</Text>
+        {usuarios && usuarios.map(usuario => (
+          <Text key={usuario.id}>{usuario.correo}</Text>
+        ))}
       </View>
+      <Button mode="text" onPress={handleDeleteData} style={styles.botonEliminar} labelStyle={styles.botonEliminarText}>
+        Eliminar Datos de Usuarios
+      </Button>
     </ScrollView>
   );
 }
@@ -162,45 +188,69 @@ export default function Register({ navigation }) {
 const styles = StyleSheet.create({
   page: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   container: {
-    flex: 1,
-    backgroundColor: '#fff',
     alignItems: 'center',
-    justifyContent: 'center',
     padding: 16,
+  },
+  logo: {
+    width: 150,
+    height: 150,
+    marginBottom: 40,
+    resizeMode: 'contain',
+  },
+  title: {
+    fontSize: 24,
+    color: '#333333', // Gris oscuro
+    marginBottom: 20,
+    fontWeight: 'bold',
   },
   formulario: {
     width: '100%',
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
+    marginBottom: 20,
+    paddingHorizontal: 20,
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
     marginBottom: 12,
-    paddingHorizontal: 8,
-    width: '85%',
+    borderRadius: 8, // Redondea las esquinas de los inputs
   },
   passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  checkMark: {
-    marginLeft: 8,
-    color: 'green',
-    fontSize: 24,
-  },
-  boton: {
-    marginTop: 16,
+    position: 'relative',
     width: '100%',
   },
+  passwordInput: {
+    paddingRight: 40, // Añade espacio para el ícono de verificación
+  },
+  checkMark: {
+    position: 'absolute',
+    right: 8,
+    top: '50%',
+    transform: [{ translateY: -30 }], // Ajuste vertical para centrar el ícono
+  },
+  botonAcceder: {
+    backgroundColor: '#FFA500',
+    paddingVertical: 8,
+    marginBottom: 12,
+    width: '80%',
+    alignSelf: 'center',
+  },
+  botonAccederText: {
+    color: '#fff',
+  },
+  botonRegistrarse: {
+    color: '#003366',
+    marginTop: 10,
+  },
+  botonRegistrarseText: {
+    color: '#003366',
+  },
+  botonEliminar: {
+    marginTop: 16,
+    width: '80%',
+    alignSelf: 'center',
+  },
+  botonEliminarText: {
+    color: '#FF0000',
+  },
 });
-
-
-
-
-

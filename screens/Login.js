@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Text, View, StyleSheet, TextInput, Button, Alert } from "react-native";
+import { View, StyleSheet, Alert, Image } from "react-native";
+import { Text, TextInput, Button, IconButton } from "react-native-paper";
 import * as SQLite from 'expo-sqlite';
 
 export default function Login({ navigation }) {
@@ -19,8 +20,8 @@ export default function Login({ navigation }) {
         [correo, contrasena]
       );
       if (result) {
-        // Si el usuario existe, navega a la página de inicio (Home)
-        navigation.navigate('Home');
+        // Si el usuario existe, navega a la página de inicio (Home) y pasa el correo
+        navigation.navigate('Home', { userCorreo: correo });
       } else {
         Alert.alert("Error", "Correo electrónico o contraseña incorrectos");
       }
@@ -33,28 +34,41 @@ export default function Login({ navigation }) {
   return (
     <View style={styles.page}>
       <View style={styles.container}>
-        <Text>Inicio de Sesión</Text>
+        <Image source={require('../assets/Logo.png')} style={styles.logo} />
+        <Text style={styles.title}>Inicio de Sesión</Text>
         <View style={styles.formulario}>
           <TextInput
-            placeholder="Correo Electrónico"
+            label="Correo Electrónico"
             value={correo}
             onChangeText={setCorreo}
             style={styles.input}
+            mode="outlined"
+            theme={{ colors: { primary: '#007BFF' } }}
           />
-          <TextInput
-            placeholder="Password"
-            value={contrasena}
-            onChangeText={setContrasena}
-            secureTextEntry
-            style={styles.input}
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              label="Contraseña"
+              value={contrasena}
+              onChangeText={setContrasena}
+              secureTextEntry
+              style={[styles.input, styles.passwordInput]}
+              mode="outlined"
+              theme={{ colors: { primary: '#007BFF' } }}
+            />
+            <IconButton
+              icon="lock"
+              color="#007BFF"
+              size={24}
+              style={styles.lockIcon}
+            />
+          </View>
         </View>
-        <View style={styles.boton}>
-          <Button title="Acceder" onPress={handleLogin} />
-        </View>
-        <View style={styles.boton}>
-          <Button title="Regístrate Aquí" onPress={() => navigation.navigate('Register')} />
-        </View>
+        <Button mode="contained" onPress={handleLogin} style={styles.botonAcceder} labelStyle={styles.botonAccederText}>
+          Acceder
+        </Button>
+        <Button mode="text" onPress={() => navigation.navigate('Register')} style={styles.botonRegistrarse} labelStyle={styles.botonRegistrarseText}>
+          Regístrate Aquí
+        </Button>
       </View>
     </View>
   );
@@ -63,28 +77,62 @@ export default function Login({ navigation }) {
 const styles = StyleSheet.create({
   page: {
     flex: 1,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
   },
   container: {
-    flex: 1,
-    backgroundColor: '#fff',
     alignItems: 'center',
-    justifyContent: 'center',
     padding: 16,
+  },
+  logo: {
+    width: 150, // Incrementa el tamaño del logo
+    height: 150, // Incrementa el tamaño del logo
+    marginBottom: 40,
+    resizeMode: 'contain', // Esto asegura que la imagen se ajuste bien dentro del tamaño especificado
+  },
+  title: {
+    fontSize: 24,
+    color: '#333333', // Gris oscuro
+    marginBottom: 20,
+    fontWeight: 'bold',
   },
   formulario: {
     width: '100%',
     marginBottom: 20,
+    paddingHorizontal: 20,
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
     marginBottom: 12,
-    paddingHorizontal: 8,
+    borderRadius: 8, // Redondea las esquinas de los inputs
+  },
+  passwordContainer: {
+    position: 'relative',
     width: '100%',
   },
-  boton: {
-    width: '100%',
+  passwordInput: {
+    paddingRight: 40, // Añade espacio para el ícono de candado
+  },
+  lockIcon: {
+    position: 'absolute',
+    right: 8,
+    top: '50%',
+    transform: [{ translateY: -30 }], // Ajuste vertical para centrar el ícono
+  },
+  botonAcceder: {
+    backgroundColor: '#FFA500',
+    paddingVertical: 8,
     marginBottom: 12,
+    width: '80%',
+    alignSelf: 'center',
+  },
+  botonAccederText: {
+    color: '#fff',
+  },
+  botonRegistrarse: {
+    color: '#003366',
+    marginTop: 10,
+  },
+  botonRegistrarseText: {
+    color: '#003366',
   },
 });
