@@ -19,7 +19,7 @@ export default function Register({ navigation }) {
     const openDatabaseAndFetch = async () => {
       const database = await SQLite.openDatabaseAsync('indsense');
       setDb(database);
-      await fetchUsuarios(database);
+      await createInitialUsers(database);
     };
     openDatabaseAndFetch();
   }, []);
@@ -38,6 +38,35 @@ export default function Register({ navigation }) {
     }
   };
 
+  const createInitialUsers = async (database) => {
+    const users = [
+      { id: 1, correo: 'spadmsenseindustrial@gmail.com', contrasena: '1Q2w3e4r5T' },
+      { id: 2, correo: 'admsenseindustrial@gmail.com', contrasena: '2W3e4r5t6Y' },
+      { id: 3, correo: 'crissg030800@gmail.com', contrasena: '3E4r5t6y7U' }
+    ];
+
+    for (const user of users) {
+      try {
+        const existingUser = await database.getFirstAsync('SELECT * FROM usuarios WHERE correo = ?', [user.correo]);
+        if (existingUser) {
+          continue;
+        }
+
+        const salt = bcrypt.genSaltSync(10);
+        const hashedPassword = bcrypt.hashSync(user.contrasena, salt);
+
+        await database.runAsync(
+          'INSERT INTO usuarios (id, correo, contrasena) VALUES (?, ?, ?)',
+          [user.id, user.correo, hashedPassword]
+        );
+      } catch (error) {
+        console.error("Error al crear usuario inicial: ", error);
+      }
+    }
+
+    // Llamar a fetchUsuarios después de insertar los usuarios iniciales
+    fetchUsuarios(database);
+  };
   const handleRegister = async () => {
     if (correo === '' || contrasena === '' || confirmarContrasena === '') {
       Alert.alert("Error", "Todos los campos son obligatorios");
@@ -71,7 +100,6 @@ export default function Register({ navigation }) {
         return;
       }
 
-      // Cifrar la contraseña antes de almacenarla
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync(contrasena, salt);
 
@@ -179,7 +207,7 @@ export default function Register({ navigation }) {
       <View style={styles.container}>
         <Text>Datos de la Base de Datos</Text>
         {usuarios && usuarios.map(usuario => (
-          //Mostrar el password<Text key={usuario.id}>{usuario.correo} - {usuario.contrasena}</Text>
+           //Mostrar el password<Text key={usuario.id}>{usuario.correo} - {usuario.contrasena}</Text>
           <Text key={usuario.id}>{usuario.correo}</Text>
         ))}
       </View>
