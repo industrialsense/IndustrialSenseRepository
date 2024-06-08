@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Text, View, StyleSheet, ScrollView, Image, Alert } from "react-native";
 import { TextInput, Button, IconButton } from "react-native-paper";
 import * as SQLite from 'expo-sqlite';
+import bcrypt from 'react-native-bcrypt';
 
 export default function Register({ navigation }) {
   const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -70,9 +71,13 @@ export default function Register({ navigation }) {
         return;
       }
 
+      // Cifrar la contraseña antes de almacenarla
+      const salt = bcrypt.genSaltSync(10);
+      const hashedPassword = bcrypt.hashSync(contrasena, salt);
+
       const result = await db.runAsync(
         'INSERT INTO usuarios (correo, contrasena) VALUES (?, ?)',
-        [correo, contrasena]
+        [correo, hashedPassword]
       );
 
       if (result) {
@@ -118,8 +123,8 @@ export default function Register({ navigation }) {
             style={styles.input}
             mode="outlined"
             theme={{ colors: { primary: '#007BFF', text: '#000', placeholder: '#757575', background: '#fff' } }}
-            outlineColor="#333333" // Borde gris oscuro
-            activeOutlineColor="#007BFF" // Borde azul al estar activo
+            outlineColor="#333333"
+            activeOutlineColor="#007BFF"
           />
           <View style={styles.passwordContainer}>
             <TextInput
@@ -130,8 +135,8 @@ export default function Register({ navigation }) {
               style={[styles.input, styles.passwordInput]}
               mode="outlined"
               theme={{ colors: { primary: '#007BFF', text: '#000', placeholder: '#757575', background: '#fff' } }}
-              outlineColor="#333333" // Borde gris oscuro
-              activeOutlineColor="#007BFF" // Borde azul al estar activo
+              outlineColor="#333333"
+              activeOutlineColor="#007BFF"
             />
             {isPasswordValid && (
               <IconButton
@@ -151,8 +156,8 @@ export default function Register({ navigation }) {
               style={[styles.input, styles.passwordInput]}
               mode="outlined"
               theme={{ colors: { primary: '#007BFF', text: '#000', placeholder: '#757575', background: '#fff' } }}
-              outlineColor="#333333" // Borde gris oscuro
-              activeOutlineColor="#007BFF" // Borde azul al estar activo
+              outlineColor="#333333"
+              activeOutlineColor="#007BFF"
             />
             {doPasswordsMatch && (
               <IconButton
@@ -171,10 +176,10 @@ export default function Register({ navigation }) {
           ¿Ya tienes una cuenta?
         </Button>
       </View>
-      {/* Componente para mostrar los datos de la base de datos */}
       <View style={styles.container}>
         <Text>Datos de la Base de Datos</Text>
         {usuarios && usuarios.map(usuario => (
+          //Mostrar el password<Text key={usuario.id}>{usuario.correo} - {usuario.contrasena}</Text>
           <Text key={usuario.id}>{usuario.correo}</Text>
         ))}
       </View>
@@ -202,7 +207,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    color: '#333333', // Gris oscuro
+    color: '#333333',
     marginBottom: 20,
     fontWeight: 'bold',
   },
@@ -213,20 +218,20 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 12,
-    borderRadius: 8, // Redondea las esquinas de los inputs
+    borderRadius: 8,
   },
   passwordContainer: {
     position: 'relative',
     width: '100%',
   },
   passwordInput: {
-    paddingRight: 40, // Añade espacio para el ícono de verificación
+    paddingRight: 40,
   },
   checkMark: {
     position: 'absolute',
     right: 8,
     top: '50%',
-    transform: [{ translateY: -30 }], // Ajuste vertical para centrar el ícono
+    transform: [{ translateY: -30 }],
   },
   botonAcceder: {
     backgroundColor: '#FFA500',

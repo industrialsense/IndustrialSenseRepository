@@ -1,0 +1,10 @@
+Es importante descargar esta dependencia:
+
+npm install react-native-bcrypt
+
+luego darle reset al server:
+
+npx expo start -c
+
+
+y en la linea 182 del archivo registrer.js se debe descomentar y comentar el del 183 para hacer la prueba de cifrado jeje
