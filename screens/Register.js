@@ -215,6 +215,7 @@ export default function Register({ navigation }) {
         <View style={styles.container}>
           <Text>Datos de la Base de Datos</Text>
           {usuarios && usuarios.map(usuario => (
+            //Muestra la contraseña<Text key={usuario.id}>{usuario.correo} - {usuario.contrasena}</Text>
             <Text key={usuario.id}>{usuario.correo}</Text>
           ))}
         </View>
