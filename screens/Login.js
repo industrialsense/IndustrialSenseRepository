@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, StyleSheet, Alert, Image } from "react-native";
 import { Text, TextInput, Button, IconButton } from "react-native-paper";
 import * as SQLite from 'expo-sqlite';
+import bcrypt from 'react-native-bcrypt';
 
 export default function Login({ navigation }) {
   const [correo, setCorreo] = useState('');
@@ -16,12 +17,17 @@ export default function Login({ navigation }) {
     const db = await SQLite.openDatabaseAsync('indsense');
     try {
       const result = await db.getFirstAsync(
-        'SELECT * FROM usuarios WHERE correo = ? AND contrasena = ?',
-        [correo, contrasena]
+        'SELECT * FROM usuarios WHERE correo = ?',
+        [correo]
       );
+
       if (result) {
-        // Si el usuario existe, navega a la página de inicio (Home) y pasa el correo
-        navigation.navigate('Home', { userCorreo: correo });
+        const isValidPassword = bcrypt.compareSync(contrasena, result.contrasena);
+        if (isValidPassword) {
+          navigation.navigate('Home', { userCorreo: correo });
+        } else {
+          Alert.alert("Error", "Correo electrónico o contraseña incorrectos");
+        }
       } else {
         Alert.alert("Error", "Correo electrónico o contraseña incorrectos");
       }
@@ -85,14 +91,14 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logo: {
-    width: 150, // Incrementa el tamaño del logo
-    height: 150, // Incrementa el tamaño del logo
+    width: 150,
+    height: 150,
     marginBottom: 40,
-    resizeMode: 'contain', // Esto asegura que la imagen se ajuste bien dentro del tamaño especificado
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 24,
-    color: '#333333', // Gris oscuro
+    color: '#333333',
     marginBottom: 20,
     fontWeight: 'bold',
   },
@@ -103,20 +109,20 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 12,
-    borderRadius: 8, // Redondea las esquinas de los inputs
+    borderRadius: 8,
   },
   passwordContainer: {
     position: 'relative',
     width: '100%',
   },
   passwordInput: {
-    paddingRight: 40, // Añade espacio para el ícono de candado
+    paddingRight: 40,
   },
   lockIcon: {
     position: 'absolute',
     right: 8,
     top: '50%',
-    transform: [{ translateY: -30 }], // Ajuste vertical para centrar el ícono
+    transform: [{ translateY: -30 }],
   },
   botonAcceder: {
     backgroundColor: '#FFA500',
