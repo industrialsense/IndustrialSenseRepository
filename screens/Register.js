@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Text, View, StyleSheet, ScrollView, Image, Alert } from "react-native";
-import { TextInput, Button, IconButton } from "react-native-paper";
+import { TextInput, Button, IconButton, Switch } from "react-native-paper";
 import * as SQLite from 'expo-sqlite';
 import bcrypt from 'react-native-bcrypt';
 
@@ -14,7 +14,7 @@ export default function Register({ navigation }) {
   const [db, setDb] = useState(null);
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [doPasswordsMatch, setDoPasswordsMatch] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // Nuevo estado para mostrar u ocultar la contraseña
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const openDatabaseAndFetch = async () => {
@@ -65,9 +65,9 @@ export default function Register({ navigation }) {
       }
     }
 
-    // Llamar a fetchUsuarios después de insertar los usuarios iniciales
     fetchUsuarios(database);
   };
+
   const handleRegister = async () => {
     if (correo === '' || contrasena === '' || confirmarContrasena === '') {
       Alert.alert("Error", "Todos los campos son obligatorios");
@@ -160,21 +160,14 @@ export default function Register({ navigation }) {
               label="Contraseña"
               value={contrasena}
               onChangeText={setContrasena}
-                secureTextEntry={!showPassword} // Oculta o muestra la contraseña
-                style={[styles.input, styles.passwordInput]}
-                mode="outlined"
-                theme={{ colors: { primary: '#007BFF', text: '#000', placeholder: '#757575', background: '#fff' } }}
-                outlineColor="#333333"
-                activeOutlineColor="#007BFF"
-              />
-              <IconButton
-                icon={showPassword ? 'eye-off' : 'eye'} // Icono para mostrar u ocultar la contraseña
-                color="#757575"
-                size={24}
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)} // Cambia el estado para mostrar u ocultar la contraseña
-              />
-              {isPasswordValid && (
+              secureTextEntry={!showPassword}
+              style={[styles.input, styles.passwordInput]}
+              mode="outlined"
+              theme={{ colors: { primary: '#007BFF', text: '#000', placeholder: '#757575', background: '#fff' } }}
+              outlineColor="#333333"
+              activeOutlineColor="#007BFF"
+            />
+            {isPasswordValid && (
                 <IconButton
                   icon="check-circle"
                   color="green"
@@ -182,123 +175,129 @@ export default function Register({ navigation }) {
                   style={styles.checkMark}
                 />
               )}
-            </View>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                label="Confirmar Contraseña"
-                value={confirmarContrasena}
-                onChangeText={setConfirmarContrasena}
-                secureTextEntry={!showPassword} // Oculta o muestra la contraseña
-                style={[styles.input, styles.passwordInput]}
-                mode="outlined"
-                theme={{ colors: { primary: '#007BFF', text: '#000', placeholder: '#757575', background: '#fff' } }}
-                outlineColor="#333333"
-                activeOutlineColor="#007BFF"
-              />
-              {doPasswordsMatch && (
-                <IconButton
-                  icon="check-circle"
-                  color="green"
-                  size={24}
-                  style={styles.checkMark}
-                />
-              )}
-            </View>
           </View>
-          <Button mode="contained" onPress={handleRegister} style={styles.botonAcceder} labelStyle={styles.botonAccederText}>
-            Registrar
-          </Button>
-          <Button mode="text" onPress={() => navigation.navigate('Login')} style={styles.botonRegistrarse} labelStyle={styles.botonRegistrarseText}>
-            ¿Ya tienes una cuenta?
-          </Button>
+          <View style={styles.passwordContainer}>
+            <TextInput
+              label="Confirmar Contraseña"
+              value={confirmarContrasena}
+              onChangeText={setConfirmarContrasena}
+              secureTextEntry={!showPassword}
+              style={[styles.input, styles.passwordInput]}
+              mode="outlined"
+              theme={{ colors: { primary: '#007BFF', text: '#000', placeholder: '#757575', background: '#fff' } }}
+              outlineColor="#333333"
+              activeOutlineColor="#007BFF"
+            />
+            {doPasswordsMatch && (
+                <IconButton
+                  icon="check-circle"
+                  color="green"
+                  size={24}
+                  style={styles.checkMark}
+                />
+              )}
+          </View>
+          <View style={styles.switchContainer}>
+            <Text>Mostrar Contraseña</Text>
+            <Switch
+              value={showPassword}
+              onValueChange={setShowPassword}
+              color="#007BFF"
+            />
+          </View>
         </View>
-        <View style={styles.container}>
-          <Text>Datos de la Base de Datos</Text>
-          {usuarios && usuarios.map(usuario => (
-            //Muestra la contraseña<Text key={usuario.id}>{usuario.correo} - {usuario.contrasena}</Text>
-            <Text key={usuario.id}>{usuario.correo}</Text>
-          ))}
-        </View>
-        <Button mode="text" onPress={handleDeleteData} style={styles.botonEliminar} labelStyle={styles.botonEliminarText}>
-          Eliminar Datos de Usuarios
+        <Button mode="contained" onPress={handleRegister} style={styles.botonAcceder} labelStyle={styles.botonAccederText}>
+          Registrar
         </Button>
-      </ScrollView>
-    );
-    }
-    
-    const styles = StyleSheet.create({
-      page: {
-        flex: 1,
-        backgroundColor: '#fff',
-      },
-      container: {
-        alignItems: 'center',
-        padding: 16,
-      },
-      logo: {
-        width: 150,
-        height: 150,
-        marginBottom: 40,
-        resizeMode: 'contain',
-      },
-      title: {
-        fontSize: 24,
-        color: '#333333',
-        marginBottom: 20,
-        fontWeight: 'bold',
-      },
-      formulario: {
-        width: '100%',
-        marginBottom: 20,
-        paddingHorizontal: 20,
-      },
-      input: {
-        marginBottom: 12,
-        borderRadius: 8,
-      },
-      passwordContainer: {
-        position: 'relative',
-        width: '100%',
-      },
-      passwordInput: {
-        paddingRight: 40,
-      },
-      checkMark: {
-        position: 'absolute',
-        right: 8,
-        top: '50%',
-        transform: [{ translateY: -30 }],
-      },
-      eyeIcon: {
-        position: 'absolute',
-        right: 8,
-        top: '50%',
-        transform: [{ translateY: -12 }],
-      },
-      botonAcceder: {
-        backgroundColor: '#FFA500',
-        paddingVertical: 8,
-        marginBottom: 12,
-        width: '80%',
-        alignSelf: 'center',
-      },
-      botonAccederText: {
-        color: '#fff',
-      },
-      botonRegistrarse: {
-        color: '#003366',
-        marginTop: 10,
-      },
-      botonRegistrarseText: {
-        color: '#003366',
-      },
-      botonEliminar: {
-        marginTop: 16,
-        width: '80%',
-        alignSelf: 'center',
-      },
-      botonEliminarText: {
-        color: '#FF0000',
-      },
-    });
-    
+        <Button mode="text" onPress={() => navigation.navigate('Login')} style={styles.botonRegistrarse} labelStyle={styles.botonRegistrarseText}>
+          ¿Ya tienes una cuenta?
+        </Button>
+      </View>
+      <View style={styles.container}>
+        <Text>Datos de la Base de Datos</Text>
+        {usuarios && usuarios.map(usuario => (
+          <Text key={usuario.id}>{usuario.correo}</Text>
+        ))}
+      </View>
+      <Button mode="text" onPress={handleDeleteData} style={styles.botonEliminar} labelStyle={styles.botonEliminarText}>
+        Eliminar Datos de Usuarios
+      </Button>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  container: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  logo: {
+    width: 150,
+    height: 150,
+    marginBottom: 40,
+    resizeMode: 'contain',
+  },
+  title: {
+    fontSize: 24,
+    color: '#333333',
+    marginBottom: 20,
+    fontWeight: 'bold',
+  },
+  formulario: {
+    width: '100%',
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  input: {
+    marginBottom: 12,
+    borderRadius: 10,
+  },
+  passwordContainer: {
+    position: 'relative',
+    width: '100%',
+  },
+  checkMark: {
+    position: 'absolute',
+    right: 8,
+    top: '50%',
+    transform: [{ translateY: -30 }],
+  },
+  passwordInput: {
+    paddingRight: 40,
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  botonAcceder: {
+    backgroundColor: '#FFA500',
+    paddingVertical: 8,
+    marginBottom: 12,
+    width: '80%',
+    alignSelf: 'center',
+  },
+  botonAccederText: {
+    color: '#fff',
+  },
+  botonRegistrarse: {
+    color: '#003366',
+    marginTop: 10,
+  },
+  botonRegistrarseText: {
+    color: '#003366',
+  },
+  botonEliminar: {
+    marginTop: 16,
+    width: '80%',
+    alignSelf: 'center',
+  },
+  botonEliminarText: {
+    color: '#FF0000',
+  },
+});

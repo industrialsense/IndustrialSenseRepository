@@ -7,6 +7,7 @@ import bcrypt from 'react-native-bcrypt';
 export default function Login({ navigation }) {
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // Estado para mostrar u ocultar la contraseña
 
   const handleLogin = async () => {
     if (correo === '' || contrasena === '') {
@@ -56,16 +57,17 @@ export default function Login({ navigation }) {
               label="Contraseña"
               value={contrasena}
               onChangeText={setContrasena}
-              secureTextEntry
+              secureTextEntry={!showPassword} // Oculta o muestra la contraseña
               style={[styles.input, styles.passwordInput]}
               mode="outlined"
               theme={{ colors: { primary: '#007BFF' } }}
             />
             <IconButton
-              icon="lock"
+              icon={showPassword ? 'eye-off' : 'eye'} // Icono para mostrar u ocultar la contraseña
               color="#007BFF"
               size={24}
-              style={styles.lockIcon}
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)} // Cambia el estado para mostrar u ocultar la contraseña
             />
           </View>
         </View>
@@ -118,7 +120,7 @@ const styles = StyleSheet.create({
   passwordInput: {
     paddingRight: 40,
   },
-  lockIcon: {
+  eyeIcon: {
     position: 'absolute',
     right: 8,
     top: '50%',
