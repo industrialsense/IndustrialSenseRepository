@@ -8,6 +8,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import Login from './screens/Login';
 import Home from './screens/Home';
 import Register from './screens/Register';
+import SuperAdminScreen from './screens/SuperAdmin';
+import AdminScreen from './screens/Admin';
+import UserScreen from './screens/User';
 
 export default function App() {
   const [db, setDb] = useState(null);
@@ -17,13 +20,24 @@ export default function App() {
       const database = await SQLite.openDatabaseAsync('indsense');
       setDb(database);
 
+      // Verificar si la tabla usuarios existe y tiene la columna 'rol'
+      const tableInfo = await database.getAllAsync('PRAGMA table_info(usuarios)');
+      const columns = tableInfo.map(column => column.name);
+
+      if (!columns.includes('rol')) {
+        // Si la tabla no tiene la columna 'rol', agregarla
+        await database.execAsync('ALTER TABLE usuarios ADD COLUMN rol TEXT');
+      }
+
       await database.execAsync(`
         CREATE TABLE IF NOT EXISTS usuarios (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           correo TEXT NOT NULL,
-          contrasena TEXT NOT NULL
+          contrasena TEXT NOT NULL,
+          rol TEXT NOT NULL
         );
       `);
+
       console.log("Table created successfully");
     }
 
@@ -37,8 +51,10 @@ export default function App() {
     return (
       <Stack.Navigator>
         <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen name="Home" component={Home} />
-        <Stack.Screen name='Register' component={Register}/>
+        <Stack.Screen name="Register" component={Register} />
+        <Stack.Screen name="SuperAdmin" component={SuperAdminScreen} />
+        <Stack.Screen name="Admin" component={AdminScreen} />
+        <Stack.Screen name="User" component={UserScreen} />
       </Stack.Navigator>
     );
   }

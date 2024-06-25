@@ -41,9 +41,9 @@ export default function Register({ navigation }) {
 
   const createInitialUsers = async (database) => {
     const users = [
-      { id: 1, correo: 'spadmsenseindustrial@gmail.com', contrasena: '1Q2w3e4r5T' },
-      { id: 2, correo: 'admsenseindustrial@gmail.com', contrasena: '2W3e4r5t6Y' },
-      { id: 3, correo: 'crissg030800@gmail.com', contrasena: '3E4r5t6y7U' }
+      { id: 1, correo: 'spadmsenseindustrial@gmail.com', contrasena: '1Q2w3e4r5T', rol: 'superadmin' },
+      { id: 2, correo: 'admsenseindustrial@gmail.com', contrasena: '2W3e4r5t6Y', rol: 'admin' },
+      { id: 3, correo: 'crissg030800@gmail.com', contrasena: '3E4r5t6y7U', rol: 'usuario' }
     ];
 
     for (const user of users) {
@@ -57,8 +57,8 @@ export default function Register({ navigation }) {
         const hashedPassword = bcrypt.hashSync(user.contrasena, salt);
 
         await database.runAsync(
-          'INSERT INTO usuarios (id, correo, contrasena) VALUES (?, ?, ?)',
-          [user.id, user.correo, hashedPassword]
+          'INSERT INTO usuarios (id, correo, contrasena, rol) VALUES (?, ?, ?, ?)',
+          [user.id, user.correo, hashedPassword,user.rol]
         );
       } catch (error) {
         console.error("Error al crear usuario inicial: ", error);
@@ -105,8 +105,8 @@ export default function Register({ navigation }) {
       const hashedPassword = bcrypt.hashSync(contrasena, salt);
 
       const result = await db.runAsync(
-        'INSERT INTO usuarios (correo, contrasena) VALUES (?, ?)',
-        [correo, hashedPassword]
+        'INSERT INTO usuarios (correo, contrasena, rol) VALUES (?, ?, ?)',
+        [correo, hashedPassword, rol]
       );
 
       if (result) {
@@ -216,7 +216,7 @@ export default function Register({ navigation }) {
       <View style={styles.container}>
         <Text>Datos de la Base de Datos</Text>
         {usuarios && usuarios.map(usuario => (
-          <Text key={usuario.id}>{usuario.correo}</Text>
+          <Text key={usuario.id}>{usuario.correo} - {usuario.rol}</Text>
         ))}
       </View>
       <Button mode="text" onPress={handleDeleteData} style={styles.botonEliminar} labelStyle={styles.botonEliminarText}>

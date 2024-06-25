@@ -25,7 +25,20 @@ export default function Login({ navigation }) {
       if (result) {
         const isValidPassword = bcrypt.compareSync(contrasena, result.contrasena);
         if (isValidPassword) {
-          navigation.navigate('Home', { userCorreo: correo });
+          switch (result.rol) {
+            case 'superadmin':
+              navigation.navigate('SuperAdmin');
+              break;
+            case 'admin':
+              navigation.navigate('Admin');
+              break;
+            case 'usuario':
+              navigation.navigate('User');
+              break;
+            default:
+              Alert.alert("Error", "Rol desconocido");
+              break;
+          }
         } else {
           Alert.alert("Error", "Correo electrónico o contraseña incorrectos");
         }
