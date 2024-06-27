@@ -25,11 +25,6 @@ export default function Register({ navigation }) {
     openDatabaseAndFetch();
   }, []);
 
-  useEffect(() => {
-    setIsPasswordValid(complexPassword.test(contrasena));
-    setDoPasswordsMatch(contrasena === confirmarContrasena && contrasena !== '');
-  }, [contrasena, confirmarContrasena]);
-
   const fetchUsuarios = async (database) => {
     try {
       const data = await database.getAllAsync('SELECT * FROM usuarios');
@@ -38,6 +33,11 @@ export default function Register({ navigation }) {
       console.error("Error al obtener usuarios: ", error);
     }
   };
+
+  useEffect(() => {
+    setIsPasswordValid(complexPassword.test(contrasena));
+    setDoPasswordsMatch(contrasena === confirmarContrasena && contrasena !== '');
+  }, [contrasena, confirmarContrasena]);
 
   const createInitialUsers = async (database) => {
     const users = [
@@ -93,22 +93,23 @@ export default function Register({ navigation }) {
       Alert.alert("Error", "No se pudo abrir la base de datos");
       return;
     }
-
+  
     try {
       const existingUser = await db.getFirstAsync('SELECT * FROM usuarios WHERE correo = ?', [correo]);
       if (existingUser) {
         Alert.alert("Error", "El correo ya está registrado");
         return;
       }
-
+  
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync(contrasena, salt);
-
+      const rol = 'usuario'; // Definir el rol aquí
+  
       const result = await db.runAsync(
         'INSERT INTO usuarios (correo, contrasena, rol) VALUES (?, ?, ?)',
         [correo, hashedPassword, rol]
       );
-
+  
       if (result) {
         const usuarios = await db.getAllAsync('SELECT * FROM usuarios');
         setUsuarios(usuarios);
@@ -122,22 +123,7 @@ export default function Register({ navigation }) {
       Alert.alert("Error", "Error al registrar usuario");
     }
   };
-
-  const handleDeleteData = async () => {
-    if (!db) {
-      Alert.alert("Error", "No se pudo abrir la base de datos");
-      return;
-    }
-
-    try {
-      await db.runAsync('DELETE FROM usuarios');
-      setUsuarios([]);
-      Alert.alert("Éxito", "Datos de usuarios eliminados correctamente");
-    } catch (error) {
-      console.error("Error al eliminar datos de usuarios: ", error);
-      Alert.alert("Error", "Error al eliminar datos de usuarios");
-    }
-  };
+  
 
   return (
     <ScrollView style={styles.page}>
@@ -213,15 +199,6 @@ export default function Register({ navigation }) {
           ¿Ya tienes una cuenta?
         </Button>
       </View>
-      <View style={styles.container}>
-        <Text>Datos de la Base de Datos</Text>
-        {usuarios && usuarios.map(usuario => (
-          <Text key={usuario.id}>{usuario.correo} - {usuario.rol}</Text>
-        ))}
-      </View>
-      <Button mode="text" onPress={handleDeleteData} style={styles.botonEliminar} labelStyle={styles.botonEliminarText}>
-        Eliminar Datos de Usuarios
-      </Button>
     </ScrollView>
   );
 }

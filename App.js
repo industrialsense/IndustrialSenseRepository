@@ -50,11 +50,14 @@ export default function App() {
   function MyStack() {
     return (
       <Stack.Navigator>
-        <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen name="Register" component={Register} />
-        <Stack.Screen name="SuperAdmin" component={SuperAdminScreen} />
-        <Stack.Screen name="Admin" component={AdminScreen} />
-        <Stack.Screen name="User" component={UserScreen} />
+        <Stack.Group 
+          screenOptions={{ headerStyle: { backgroundColor: 'papayawhip' } }} >
+          <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen name="Register" component={Register} />
+          <Stack.Screen name="SuperAdmin" component={SuperAdminScreen} />
+          <Stack.Screen name="Admin" component={AdminScreen} options={{ title: 'Base de Datos' }} />
+          <Stack.Screen name="User" component={UserScreen} />
+        </Stack.Group>
       </Stack.Navigator>
     );
   }
