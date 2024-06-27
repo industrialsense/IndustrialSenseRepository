@@ -6,7 +6,6 @@ import * as SQLite from 'expo-sqlite';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import Login from './screens/Login';
-import Home from './screens/Home';
 import Register from './screens/Register';
 import SuperAdminScreen from './screens/SuperAdmin';
 import AdminScreen from './screens/Admin';
