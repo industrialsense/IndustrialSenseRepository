@@ -120,7 +120,6 @@ export default function AdminScreen({ navigation }) {
       Alert.alert("Error", "Texto de confirmación incorrecto");
     }
   };
-  
 
   const handleDeleteUser = async (id) => {
     if (!db) {
@@ -153,11 +152,11 @@ export default function AdminScreen({ navigation }) {
     const start = page * itemsPerPage;
     const end = start + itemsPerPage;
     return usuarios.slice(start, end).map((usuario) => (
-      <DataTable.Row key={usuario.id}>
-        <DataTable.Cell>{usuario.id}</DataTable.Cell>
-        <DataTable.Cell>{usuario.correo}</DataTable.Cell>
-        <DataTable.Cell>{usuario.rol}</DataTable.Cell>
-        <DataTable.Cell>
+      <DataTable.Row key={usuario.id} style={styles.row}>
+        <DataTable.Cell style={styles.cell}>{usuario.id}</DataTable.Cell>
+        <DataTable.Cell style={styles.cell}>{usuario.correo}</DataTable.Cell>
+        <DataTable.Cell style={styles.cell}>{usuario.rol}</DataTable.Cell>
+        <DataTable.Cell style={styles.actionsCell}>
           <IconButton
             icon="delete"
             color="red"
@@ -178,7 +177,7 @@ export default function AdminScreen({ navigation }) {
         style={styles.searchbar}
       />
       <ScrollView style={styles.scrollView}>
-        <DataTable>
+        <DataTable style={styles.dataTable}>
           <DataTable.Header>
             <DataTable.Title>ID</DataTable.Title>
             <DataTable.Title>Correo</DataTable.Title>
@@ -188,21 +187,19 @@ export default function AdminScreen({ navigation }) {
 
           {searchQuery !== '' ? (
             searchResults.map((usuario) => (
-              <Card key={usuario.id} style={styles.card}>
-                <Card.Content>
-                  <Text>ID: {usuario.id}</Text>
-                  <Text>Correo: {usuario.correo}</Text>
-                  <Text>Rol: {usuario.rol}</Text>
-                </Card.Content>
-                <Card.Actions>
+              <DataTable.Row key={usuario.id} style={styles.row}>
+                <DataTable.Cell style={styles.cell}>{usuario.id}</DataTable.Cell>
+                <DataTable.Cell style={styles.cell}>{usuario.correo}</DataTable.Cell>
+                <DataTable.Cell style={styles.cell}>{usuario.rol}</DataTable.Cell>
+                <DataTable.Cell style={styles.actionsCell}>
                   <IconButton
                     icon="delete"
                     color="red"
                     size={20}
                     onPress={() => handleDeleteUser(usuario.id)}
                   />
-                </Card.Actions>
-              </Card>
+                </DataTable.Cell>
+              </DataTable.Row>
             ))
           ) : (
             renderUsuarios()
@@ -216,6 +213,7 @@ export default function AdminScreen({ navigation }) {
             numberOfItemsPerPageList={numberOfItemsPerPageList}
             onItemsPerPageChange={(size) => setItemsPerPage(size)}
             selectPageDropdownLabel={'Filas por página'}
+            style={styles.pagination}
           />
         </DataTable>
         <Button mode="contained" onPress={handleDeleteData} style={styles.button}>
@@ -273,21 +271,32 @@ const styles = StyleSheet.create({
   },
   searchbar: {
     marginBottom: 10,
+    backgroundColor: '#e7cda7',
   },
   scrollView: {
     flex: 1,
   },
+  dataTable: {
+    borderRadius: 10,
+    elevation: 3,
+    backgroundColor: '#fafafa',
+  },
+  row: {
+    height: 50,
+  },
+  cell: {
+    justifyContent: 'center',
+  },
+  actionsCell: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pagination: {
+    justifyContent: 'center',
+  },
   button: {
-    marginBottom: 10,
-  },
-  card: {
-    marginVertical: 10,
-  },
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
+    marginTop: 10,
+    backgroundColor: '#9a5341',
   },
   centeredView: {
     flex: 1,
@@ -310,34 +319,45 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5
   },
+  modalText: {
+    marginBottom: 15,
+    textAlign: "center",
+    fontWeight: 'bold',
+    fontSize: 20,
+  },
+  input: {
+    height: 40,
+    width: '100%',
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
   openButton: {
     backgroundColor: "#F194FF",
     borderRadius: 20,
     padding: 10,
     elevation: 2,
-    marginHorizontal: 5
+    minWidth: 100,
+    alignItems: 'center',
   },
   textStyle: {
     color: "white",
     fontWeight: "bold",
     textAlign: "center"
   },
-  modalText: {
-    marginBottom: 15,
-    textAlign: "center"
+  fab: {
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#ba835e',
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginBottom: 10,
-    width: '100%'
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%'
-  }
 });
 
 
