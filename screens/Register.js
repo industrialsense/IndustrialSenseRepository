@@ -123,7 +123,23 @@ export default function Register({ navigation }) {
       Alert.alert("Error", "Error al registrar usuario");
     }
   };
-  
+ 
+//Codigo a borrar a futuro
+const handleDeleteDatabase = async () => {
+  if (!db) {
+    Alert.alert("Error", "No se pudo abrir la base de datos");
+    return;
+  }
+
+  try {
+    await db.runAsync('DELETE FROM usuarios');
+    setUsuarios([]);
+    Alert.alert("Éxito", "Todos los usuarios han sido eliminados correctamente");
+  } catch (error) {
+    console.error("Error al eliminar la base de datos: ", error);
+    Alert.alert("Error", "Error al eliminar la base de datos");
+  }
+};
 
   return (
     <ScrollView style={styles.page}>
@@ -199,6 +215,24 @@ export default function Register({ navigation }) {
           ¿Ya tienes una cuenta?
         </Button>
       </View>
+      {/*Codigo de la base de datos para borrar */}
+      <View>
+          <Text>Datos de la Base de Datos</Text>
+          {usuarios.map((usuario) => (
+            <View key={usuario.id}>
+              <Text>Correo: {usuario.correo}</Text>
+              <Text>Rol: {usuario.rol}</Text>
+              {/*<Text>Rol: {usuario.contrasena}</Text>*/}
+            </View>
+          ))}
+          <Button 
+            mode="contained" 
+            onPress={handleDeleteDatabase} 
+            style={styles.botonEliminar} 
+            labelStyle={styles.botonEliminarText}>
+            Eliminar Base de Datos
+          </Button>
+        </View>
     </ScrollView>
   );
 }
@@ -275,6 +309,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   botonEliminarText: {
-    color: '#FF0000',
+    color: 'white',
   },
 });
