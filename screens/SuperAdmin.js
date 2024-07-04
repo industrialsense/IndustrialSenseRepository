@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Alert, Modal, Text, TextInput, TouchableOpacity } from 'react-native';
-import { Button, Searchbar, DataTable, IconButton, FAB } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Alert, Modal, Text, TextInput } from 'react-native';
+import { Button, Searchbar, DataTable, IconButton, FAB, Checkbox } from 'react-native-paper';
 import * as SQLite from 'expo-sqlite';
 import bcrypt from 'react-native-bcrypt';
 
@@ -16,17 +16,16 @@ export default function AdminScreen({ navigation }) {
   const [itemsPerPage, setItemsPerPage] = useState(numberOfItemsPerPageList[0]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalAddVisible, setModalAddVisible] = useState(false);
-  const [modalEditVisible, setModalEditVisible] = useState(false); // Nuevo estado para modal de edición
+  const [modalEditVisible, setModalEditVisible] = useState(false);
   const [confirmationText, setConfirmationText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [newUserCorreo, setNewUserCorreo] = useState('');
   const [newUserContrasena, setNewUserContrasena] = useState('');
-  const [newUserRole, setNewUserRole] = useState('');
-  const [editUserId, setEditUserId] = useState(null); // Nuevo estado para el ID del usuario a editar
-  const [editUserCorreo, setEditUserCorreo] = useState(''); // Nuevo estado para el correo del usuario a editar
-  const [editUserContrasena, setEditUserContrasena] = useState(''); // Nuevo estado para la contraseña del usuario a editar
-  const [editUserRole, setEditUserRole] = useState(''); // Nuevo estado para el rol del usuario a editar
+  const [editUserId, setEditUserId] = useState(null);
+  const [editUserCorreo, setEditUserCorreo] = useState('');
+  const [editUserContrasena, setEditUserContrasena] = useState('');
+  const [editUserRole, setEditUserRole] = useState('');
 
   useEffect(() => {
     const openDatabaseAndFetch = async () => {
@@ -85,7 +84,7 @@ export default function AdminScreen({ navigation }) {
     fetchUsuarios(database);
   };
 
-  const handleDeleteData = async () => {
+  const handleDeleteAllData = async () => {
     if (!db) {
       Alert.alert("Error", "No se pudo abrir la base de datos");
       return;
@@ -94,17 +93,17 @@ export default function AdminScreen({ navigation }) {
     setModalVisible(true);
   };
 
-  const confirmDeleteData = async () => {
+  const confirmDeleteAllData = async () => {
     if (confirmationText === 'DELETE') {
       Alert.alert(
         "Confirmación",
-        "Esta acción es irreversible. ¿Desea continuar?",
+        "Esta acción eliminará todos los usuarios. ¿Desea continuar?",
         [
           {
             text: "Cancelar",
             onPress: () => {
-              setModalVisible(false); // Cerrar el modal si el usuario cancela
-              setConfirmationText(''); // Limpiar el texto de confirmación
+              setModalVisible(false);
+              setConfirmationText('');
             },
             style: "cancel"
           },
@@ -114,12 +113,12 @@ export default function AdminScreen({ navigation }) {
               try {
                 await db.runAsync('DELETE FROM usuarios');
                 setUsuarios([]);
-                Alert.alert("Éxito", "Datos de usuarios eliminados correctamente");
+                Alert.alert("Éxito", "Todos los usuarios han sido eliminados correctamente");
                 setModalVisible(false);
                 setConfirmationText('');
               } catch (error) {
-                console.error("Error al eliminar datos de usuarios: ", error);
-                Alert.alert("Error", "Error al eliminar datos de usuarios");
+                console.error("Error al eliminar todos los usuarios: ", error);
+                Alert.alert("Error", "Error al eliminar todos los usuarios");
               }
             }
           }
@@ -136,6 +135,26 @@ export default function AdminScreen({ navigation }) {
       return;
     }
 
+    const userToDelete = usuarios.find(usuario => usuario.id === id);
+
+    Alert.alert(
+      "Confirmación",
+      `¿Está seguro que desea eliminar al usuario ${userToDelete.correo}?`,
+      [
+        {
+          text: "Cancelar",
+          onPress: () => console.log("Cancelado"),
+          style: "cancel"
+        },
+        {
+          text: "Eliminar",
+          onPress: () => confirmDeleteUser(id)
+        }
+      ]
+    );
+  };
+
+  const confirmDeleteUser = async (id) => {
     try {
       await db.runAsync('DELETE FROM usuarios WHERE id = ?', [id]);
       setUsuarios(usuarios.filter((usuario) => usuario.id !== id));
@@ -191,7 +210,6 @@ export default function AdminScreen({ navigation }) {
     setModalAddVisible(false);
     setNewUserCorreo('');
     setNewUserContrasena('');
-    setNewUserRole('');
   };
 
   const handleAddUser = async () => {
@@ -206,7 +224,7 @@ export default function AdminScreen({ navigation }) {
 
       await db.runAsync(
         'INSERT INTO usuarios (correo, contrasena, rol) VALUES (?, ?, ?)',
-        [newUserCorreo, hashedPassword, newUserRole]
+        [newUserCorreo, hashedPassword, 'usuario']
       );
 
       Alert.alert("Éxito", "Usuario agregado correctamente");
@@ -221,6 +239,7 @@ export default function AdminScreen({ navigation }) {
   const handleOpenEditModal = (usuario) => {
     setEditUserId(usuario.id);
     setEditUserCorreo(usuario.correo);
+    setEditUserContrasena('');
     setEditUserRole(usuario.rol);
     setModalEditVisible(true);
   };
@@ -235,7 +254,7 @@ export default function AdminScreen({ navigation }) {
 
   const handleEditUser = async () => {
     if (!db || !editUserId) {
-      Alert.alert("Error", "No se pudo abrir la base de datos o no se especificó el ID de usuario a editar");
+      Alert.alert("Error", "No se pudo abrir la base de datos o ID de usuario no válido");
       return;
     }
 
@@ -244,8 +263,8 @@ export default function AdminScreen({ navigation }) {
       const hashedPassword = bcrypt.hashSync(editUserContrasena, salt);
 
       await db.runAsync(
-        'UPDATE usuarios SET correo = ?, contrasena = ?, rol = ? WHERE id = ?',
-        [editUserCorreo, hashedPassword, editUserRole, editUserId]
+        'UPDATE usuarios SET contrasena = ?, rol = ? WHERE id = ?',
+        [hashedPassword, editUserRole, editUserId]
       );
 
       Alert.alert("Éxito", "Usuario editado correctamente");
@@ -257,24 +276,36 @@ export default function AdminScreen({ navigation }) {
     }
   };
 
+  const handleLogoutButtonPress = () => {
+    navigation.navigate('Login');
+  };
+
   return (
     <View style={styles.container}>
-      <Searchbar
-        placeholder="Buscar"
-        onChangeText={handleSearch}
-        value={searchQuery}
-        style={styles.searchbar}
-      />
-      <ScrollView style={styles.scrollView}>
-        <DataTable style={styles.dataTable}>
+      <View style={styles.searchContainer}>
+        <Searchbar
+          placeholder="Buscar Usuario"
+          onChangeText={handleSearch}
+          value={searchQuery}
+          style={styles.searchBar}
+        />
+        <IconButton
+          icon="logout"
+          color="#ba835e"
+          size={20}
+          onPress={handleLogoutButtonPress}
+          style={styles.logoutButton}
+        />
+      </View>
+      <ScrollView>
+        <DataTable>
           <DataTable.Header>
-            <DataTable.Title>ID</DataTable.Title>
-            <DataTable.Title>Correo</DataTable.Title>
-            <DataTable.Title>Rol</DataTable.Title>
-            <DataTable.Title>Acciones</DataTable.Title>
+            <DataTable.Title style={styles.cell}>ID</DataTable.Title>
+            <DataTable.Title style={styles.cell}>Correo</DataTable.Title>
+            <DataTable.Title style={styles.cell}>Rol</DataTable.Title>
+            <DataTable.Title style={styles.cell}>Acciones</DataTable.Title>
           </DataTable.Header>
-
-          {searchQuery !== '' ? (
+          {searchQuery ? (
             searchResults.map((usuario) => (
               <DataTable.Row key={usuario.id} style={styles.row}>
                 <DataTable.Cell style={styles.cell}>{usuario.id}</DataTable.Cell>
@@ -299,153 +330,128 @@ export default function AdminScreen({ navigation }) {
           ) : (
             renderUsuarios()
           )}
-
-          <DataTable.Pagination
-            page={page}
-            numberOfPages={Math.ceil(usuarios.length / itemsPerPage)}
-            onPageChange={(page) => setPage(page)}
-            label={`${page + 1} de ${Math.ceil(usuarios.length / itemsPerPage)}`}
-            numberOfItemsPerPageList={numberOfItemsPerPageList}
-            onItemsPerPageChange={(size) => setItemsPerPage(size)}
-            selectPageDropdownLabel={'Filas por página'}
-            style={styles.pagination}
-          />
         </DataTable>
-        <Button mode="contained" onPress={handleDeleteData} style={styles.button}>
-          Eliminar Base de Datos
-        </Button>
       </ScrollView>
-
-      {/* Modal para eliminar datos */}
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="slide"
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalText}>Confirmar Eliminación</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ingrese 'DELETE' para confirmar"
-              onChangeText={(text) => setConfirmationText(text)}
-              value={confirmationText}
-            />
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={{ ...styles.openButton, backgroundColor: "#2196F3" }}
-                onPress={confirmDeleteData}
-              >
-                <Text style={styles.textStyle}>Confirmar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{ ...styles.openButton, backgroundColor: "#2196F3" }}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.textStyle}>Cancelar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal para agregar usuario */}
-      <Modal
-        visible={modalAddVisible}
-        transparent={true}
-        animationType="slide"
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalText}>Agregar Usuario</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Correo"
-              onChangeText={(text) => setNewUserCorreo(text)}
-              value={newUserCorreo}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Contraseña"
-              secureTextEntry={true}
-              onChangeText={(text) => setNewUserContrasena(text)}
-              value={newUserContrasena}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Rol"
-              onChangeText={(text) => setNewUserRole(text)}
-              value={newUserRole}
-            />
-            <Button mode="contained" onPress={handleAddUser} style={styles.button}>
-              Agregar Usuario
-            </Button>
-            <TouchableOpacity
-              style={{ ...styles.openButton, backgroundColor: "#2196F3" }}
-              onPress={handleCloseAddModal}
-            >
-              <Text style={styles.textStyle}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal para editar usuario */}
-      <Modal
-        visible={modalEditVisible}
-        transparent={true}
-        animationType="slide"
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalText}>Editar Usuario</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Correo"
-              onChangeText={(text) => setEditUserCorreo(text)}
-              value={editUserCorreo}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Nueva Contraseña (opcional)"
-              secureTextEntry={true}
-              onChangeText={(text) => setEditUserContrasena(text)}
-              value={editUserContrasena}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Rol"
-              onChangeText={(text) => setEditUserRole(text)}
-              value={editUserRole}
-            />
-            <Button mode="contained" onPress={handleEditUser} style={styles.button}>
-              Guardar Cambios
-            </Button>
-            <TouchableOpacity
-              style={{ ...styles.openButton, backgroundColor: "#2196F3" }}
-              onPress={handleCloseEditModal}
-            >
-              <Text style={styles.textStyle}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Botón FAB para agregar usuario */}
       <FAB
-        icon="plus"
-        label="Agregar Usuario"
         style={styles.fab}
+        icon="plus"
+        color="white"
         onPress={handleOpenAddModal}
       />
-
-      {/* Botón FAB para cerrar sesión */}
-      <FAB
-        icon="logout"
-        label="Cerrar Sesión"
-        style={styles.fabLogout}
-        onPress={handleLogout}
-      />
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalAddVisible}
+        onRequestClose={handleCloseAddModal}
+      >
+        <View style={styles.modalView}>
+          <Text style={styles.modalText}>Agregar Usuario</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Correo Electrónico"
+            value={newUserCorreo}
+            onChangeText={setNewUserCorreo}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Contraseña"
+            secureTextEntry={true}
+            value={newUserContrasena}
+            onChangeText={setNewUserContrasena}
+          />
+          <View style={styles.buttonContainer}>
+            <Button mode="contained" onPress={handleAddUser} style={[styles.modalButton, { backgroundColor: '#FFA500' }]}>
+              Agregar
+            </Button>
+            <Button mode="outlined" onPress={handleCloseAddModal} style={[styles.modalButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }}>
+              Cancelar
+            </Button>
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalEditVisible}
+        onRequestClose={handleCloseEditModal}
+      >
+        <View style={styles.modalView}>
+          <Text style={styles.modalText}>Editar Usuario</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Correo"
+            value={editUserCorreo}
+            onChangeText={setEditUserCorreo}
+            editable={false}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Crear Nueva Contraseña"
+            secureTextEntry={true}
+            value={editUserContrasena}
+            onChangeText={setEditUserContrasena}
+          />
+          <View style={styles.checkboxContainer}>
+            <Checkbox.Item
+              label="Admin"
+              status={editUserRole === 'admin' ? 'checked' : 'unchecked'}
+              onPress={() => setEditUserRole('admin')}
+              color="#008000"
+            />
+            <Checkbox.Item
+              label="Usuario"
+              status={editUserRole === 'usuario' ? 'checked' : 'unchecked'}
+              onPress={() => setEditUserRole('usuario')}
+              color="#008000"
+            />
+          </View>
+          <View style={styles.buttonContainer}>
+            <Button mode="contained" onPress={handleEditUser} style={[styles.modalButton, { backgroundColor: '#FFA500' }]}>
+              Guardar Cambios
+            </Button>
+            <Button mode="outlined" onPress={handleCloseEditModal} style={[styles.modalButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }}>
+              Cancelar
+            </Button>
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalView}>
+          <Text style={styles.modalText}>Confirmación</Text>
+          <Text style={styles.confirmationText}>
+             Esto no se puede deshacer ¿Estás seguro?.
+          </Text>
+          <TextInput
+            style={styles.confirmationInput}
+            placeholder="Ingrese 'DELETE' para confirmar"
+            onChangeText={setConfirmationText}
+            value={confirmationText}
+          />
+          <View style={styles.buttonContainer}>
+            <Button mode="contained" onPress={confirmDeleteAllData} style={[styles.modalButton, { backgroundColor: '#FFA500' }]}>
+              Eliminar Datos
+            </Button>
+            <Button mode="outlined" onPress={() => setModalVisible(false)} style={[styles.modalButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }}>
+              Cancelar
+            </Button>
+          </View>
+        </View>
+      </Modal>
+      <View style={styles.bottomContainer}>
+        <Button
+          icon="delete"
+          mode="outlined"
+          onPress={handleDeleteAllData}
+          style={[styles.deleteAllButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }}
+        >
+          Borrar Base de Datos
+        </Button>
+      </View>
     </View>
   );
 }
@@ -453,45 +459,44 @@ export default function AdminScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
     backgroundColor: '#fff',
+    paddingHorizontal: 10,
+    paddingTop: 20,
   },
-  searchbar: {
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 10,
-    backgroundColor: '#e7cda7',
   },
-  scrollView: {
+  searchBar: {
     flex: 1,
+    marginRight: 10,
   },
-  dataTable: {
-    borderRadius: 10,
-    elevation: 3,
-    backgroundColor: '#fafafa',
+  logoutButton: {
+    alignSelf: 'flex-start',
   },
   row: {
-    height: 50,
+    backgroundColor: '#f9f9f9',
   },
   cell: {
+    flex: 1,
     justifyContent: 'center',
   },
   actionsCell: {
     justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: 'row',
   },
-  pagination: {
-    justifyContent: 'center',
-  },
-  button: {
-    marginTop: 10,
-    backgroundColor: '#9a5341',
-  },
-  centeredView: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 22
+  fab: {
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#4B0082',
   },
   modalView: {
+    flex: 1,
+    justifyContent: 'center',
     margin: 20,
     backgroundColor: "white",
     borderRadius: 20,
@@ -520,36 +525,40 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 10,
   },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
+    marginTop: 20,
   },
-  openButton: {
-    backgroundColor: "#F194FF",
-    borderRadius: 20,
-    padding: 10,
-    elevation: 2,
+  modalButton: {
     minWidth: 100,
+  },
+  confirmationText: {
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  confirmationInput: {
+    height: 40,
+    width: '100%',
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  bottomContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 20,
   },
-  textStyle: {
-    color: "white",
-    fontWeight: "bold",
-    textAlign: "center"
-  },
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    left: 0,
-    bottom: 0,
-    backgroundColor: '#ba835e',
-  },
-  fabLogout: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#ba835e',
+  deleteAllButton: {
+    marginRight: 10,
   },
 });
