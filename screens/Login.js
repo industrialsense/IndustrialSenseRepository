@@ -1,19 +1,22 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Alert, Image } from "react-native";
-import { Text, TextInput, Button, IconButton } from "react-native-paper";
+import { View, StyleSheet, Alert, Image, ActivityIndicator, Text } from "react-native";
+import { TextInput, Button, IconButton } from "react-native-paper";
 import * as SQLite from 'expo-sqlite';
 import bcrypt from 'react-native-bcrypt';
 
 export default function Login({ navigation }) {
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // Estado para mostrar u ocultar la contraseña
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false); // Estado para controlar la carga
 
   const handleLogin = async () => {
     if (correo === '' || contrasena === '') {
       Alert.alert("Error", "Todos los campos son obligatorios");
       return;
     }
+
+    setLoading(true); // Mostrar la pantalla de carga
 
     const db = await SQLite.openDatabaseAsync('indsense');
     try {
@@ -48,8 +51,19 @@ export default function Login({ navigation }) {
     } catch (error) {
       console.error("Error al iniciar sesión: ", error);
       Alert.alert("Error", "Error al iniciar sesión");
+    } finally {
+      setLoading(false); // Ocultar la pantalla de carga
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007BFF" />
+        <Text style={styles.loadingText}>Iniciando sesión...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.page}>
@@ -70,17 +84,17 @@ export default function Login({ navigation }) {
               label="Contraseña"
               value={contrasena}
               onChangeText={setContrasena}
-              secureTextEntry={!showPassword} // Oculta o muestra la contraseña
+              secureTextEntry={!showPassword}
               style={[styles.input, styles.passwordInput]}
               mode="outlined"
               theme={{ colors: { primary: '#007BFF' } }}
             />
             <IconButton
-              icon={showPassword ? 'eye-off' : 'eye'} // Icono para mostrar u ocultar la contraseña
+              icon={showPassword ? 'eye-off' : 'eye'}
               color="#007BFF"
               size={24}
               style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)} // Cambia el estado para mostrar u ocultar la contraseña
+              onPress={() => setShowPassword(!showPassword)}
             />
           </View>
         </View>
@@ -155,5 +169,16 @@ const styles = StyleSheet.create({
   },
   botonRegistrarseText: {
     color: '#003366',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 20,
+    fontSize: 18,
+    color: '#333333',
   },
 });

@@ -28,7 +28,9 @@ export default function App() {
         await database.execAsync('ALTER TABLE usuarios ADD COLUMN rol TEXT');
       }
 
+      
       await database.execAsync(`
+        
         CREATE TABLE IF NOT EXISTS usuarios (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           correo TEXT NOT NULL,

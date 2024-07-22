@@ -12,7 +12,7 @@ export default function AdminScreen({ navigation }) {
   const [usuarios, setUsuarios] = useState([]);
   const [db, setDb] = useState(null);
   const [page, setPage] = useState(0);
-  const [numberOfItemsPerPageList] = useState([9, 10, 15]);
+  const [numberOfItemsPerPageList] = useState([8, 10, 15]);
   const [itemsPerPage, setItemsPerPage] = useState(numberOfItemsPerPageList[0]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalAddVisible, setModalAddVisible] = useState(false);
@@ -224,7 +224,7 @@ export default function AdminScreen({ navigation }) {
 
       await db.runAsync(
         'INSERT INTO usuarios (correo, contrasena, rol) VALUES (?, ?, ?)',
-        [newUserCorreo, hashedPassword, 'usuario']
+        [newUserCorreo, hashedPassword, editUserRole] // Usa editUserRole para asignar el rol
       );
 
       Alert.alert("Éxito", "Usuario agregado correctamente");
@@ -275,10 +275,21 @@ export default function AdminScreen({ navigation }) {
       Alert.alert("Error", "Error al editar usuario");
     }
   };
+  // Manejo de checkboxes en el modal de agregar usuario
+const handleRoleChange = (role) => {
+  setEditUserRole(role);
+};
 
   const handleLogoutButtonPress = () => {
     navigation.navigate('Login');
   };
+
+  const handleItemsPerPageChange = (itemsPerPage) => {
+    setItemsPerPage(itemsPerPage);
+    setPage(0);
+  };
+
+  const totalPages = Math.ceil(usuarios.length / itemsPerPage);
 
   return (
     <View style={styles.container}>
@@ -296,48 +307,41 @@ export default function AdminScreen({ navigation }) {
           onPress={handleLogoutButtonPress}
           style={styles.logoutButton}
         />
-      </View>
-      <ScrollView>
-        <DataTable>
-          <DataTable.Header>
-            <DataTable.Title style={styles.cell}>ID</DataTable.Title>
-            <DataTable.Title style={styles.cell}>Correo</DataTable.Title>
-            <DataTable.Title style={styles.cell}>Rol</DataTable.Title>
-            <DataTable.Title style={styles.cell}>Acciones</DataTable.Title>
-          </DataTable.Header>
-          {searchQuery ? (
-            searchResults.map((usuario) => (
-              <DataTable.Row key={usuario.id} style={styles.row}>
-                <DataTable.Cell style={styles.cell}>{usuario.id}</DataTable.Cell>
-                <DataTable.Cell style={styles.cell}>{usuario.correo}</DataTable.Cell>
-                <DataTable.Cell style={styles.cell}>{usuario.rol}</DataTable.Cell>
-                <DataTable.Cell style={styles.actionsCell}>
-                  <IconButton
-                    icon="pencil"
-                    color="blue"
-                    size={20}
-                    onPress={() => handleOpenEditModal(usuario)}
-                  />
-                  <IconButton
-                    icon="delete"
-                    color="red"
-                    size={20}
-                    onPress={() => handleDeleteUser(usuario.id)}
-                  />
-                </DataTable.Cell>
-              </DataTable.Row>
-            ))
-          ) : (
-            renderUsuarios()
-          )}
-        </DataTable>
-      </ScrollView>
-      <FAB
+         <FAB
         style={styles.fab}
         icon="plus"
         color="white"
         onPress={handleOpenAddModal}
       />
+      </View>
+      <ScrollView style={styles.container}>
+      <DataTable>
+        <DataTable.Header>
+          <DataTable.Title>ID</DataTable.Title>
+          <DataTable.Title>Correo</DataTable.Title>
+          <DataTable.Title>Rol</DataTable.Title>
+          <DataTable.Title>Acciones</DataTable.Title>
+        </DataTable.Header>
+        {renderUsuarios()}
+      </DataTable>
+      <View style={styles.paginationContainer}>
+        <Button
+          mode="contained"
+          disabled={page === 0}
+          onPress={() => setPage(page - 1)}
+        >
+          Anterior
+        </Button>
+        <Text> Página {page + 1} de {totalPages} </Text>
+        <Button
+          mode="contained"
+          disabled={page === totalPages - 1}
+          onPress={() => setPage(page + 1)}
+        >
+          Siguiente
+        </Button>
+      </View>
+    </ScrollView>
       <Modal
         animationType="slide"
         transparent={true}
@@ -359,8 +363,24 @@ export default function AdminScreen({ navigation }) {
             value={newUserContrasena}
             onChangeText={setNewUserContrasena}
           />
+          <View style={styles.checkboxContainer}>
+            
+          <Checkbox.Item
+          label="Admin"
+          status={editUserRole === 'admin' ? 'checked' : 'unchecked'}
+          onPress={() => handleRoleChange('admin')}
+          color="#008000"
+        />
+        <Checkbox.Item
+          label="Usuario"
+          status={editUserRole === 'usuario' ? 'checked' : 'unchecked'}
+          onPress={() => handleRoleChange('usuario')}
+          color="#008000"
+          />
+          </View>
+          
           <View style={styles.buttonContainer}>
-            <Button mode="contained" onPress={handleAddUser} style={[styles.modalButton, { backgroundColor: '#FFA500' }]}>
+          <Button mode="contained" onPress={handleAddUser} style={[styles.modalButton, { backgroundColor: '#FFA500' }]}>
               Agregar
             </Button>
             <Button mode="outlined" onPress={handleCloseAddModal} style={[styles.modalButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }}>
@@ -386,12 +406,13 @@ export default function AdminScreen({ navigation }) {
           />
           <TextInput
             style={styles.input}
-            placeholder="Crear Nueva Contraseña"
+            placeholder="Nueva Contraseña"
             secureTextEntry={true}
             value={editUserContrasena}
             onChangeText={setEditUserContrasena}
           />
           <View style={styles.checkboxContainer}>
+            
             <Checkbox.Item
               label="Admin"
               status={editUserRole === 'admin' ? 'checked' : 'unchecked'}
@@ -407,7 +428,7 @@ export default function AdminScreen({ navigation }) {
           </View>
           <View style={styles.buttonContainer}>
             <Button mode="contained" onPress={handleEditUser} style={[styles.modalButton, { backgroundColor: '#FFA500' }]}>
-              Guardar Cambios
+              Guardar
             </Button>
             <Button mode="outlined" onPress={handleCloseEditModal} style={[styles.modalButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }}>
               Cancelar
@@ -415,43 +436,8 @@ export default function AdminScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalView}>
-          <Text style={styles.modalText}>Confirmación</Text>
-          <Text style={styles.confirmationText}>
-             Esto no se puede deshacer ¿Estás seguro?.
-          </Text>
-          <TextInput
-            style={styles.confirmationInput}
-            placeholder="Ingrese 'DELETE' para confirmar"
-            onChangeText={setConfirmationText}
-            value={confirmationText}
-          />
-          <View style={styles.buttonContainer}>
-            <Button mode="contained" onPress={confirmDeleteAllData} style={[styles.modalButton, { backgroundColor: '#FFA500' }]}>
-              Eliminar Datos
-            </Button>
-            <Button mode="outlined" onPress={() => setModalVisible(false)} style={[styles.modalButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }}>
-              Cancelar
-            </Button>
-          </View>
-        </View>
-      </Modal>
-      <View style={styles.bottomContainer}>
-        <Button
-          icon="delete"
-          mode="outlined"
-          onPress={handleDeleteAllData}
-          style={[styles.deleteAllButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }}
-        >
-          Borrar Base de Datos
-        </Button>
-      </View>
+      
+      
     </View>
   );
 }
@@ -459,45 +445,50 @@ export default function AdminScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 50, //Agregado
     backgroundColor: '#fff',
-    paddingHorizontal: 10,
+    paddingHorizontal: 5,
     paddingTop: 20,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
-  },
+    marginBottom: 5,
+},
+
   searchBar: {
     flex: 1,
-    marginRight: 10,
+    marginRight: 110,
+    height: 60, // Reducir la altura del Searchbar
+ 
   },
   logoutButton: {
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-start'
   },
   row: {
+    height: 50,
     backgroundColor: '#f9f9f9',
   },
   cell: {
     flex: 1,
-    justifyContent: 'center',
   },
   actionsCell: {
-    justifyContent: 'center',
+    justifyContent: 'space-around',
     flexDirection: 'row',
   },
   fab: {
     position: 'absolute',
-    margin: 16,
-    right: 0,
+    margin: 0,
+    right: 90,
     bottom: 0,
     backgroundColor: '#4B0082',
+    
   },
   modalView: {
     flex: 1,
     justifyContent: 'center',
-    margin: 20,
+    margin: 30,
     backgroundColor: "white",
     borderRadius: 20,
     padding: 35,
@@ -512,18 +503,20 @@ const styles = StyleSheet.create({
     elevation: 5
   },
   modalText: {
-    marginBottom: 15,
+    marginBottom: 18,
     textAlign: "center",
     fontWeight: 'bold',
     fontSize: 20,
   },
   input: {
-    height: 40,
+    height: 50,
     width: '100%',
     borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 20,
+    borderWidth: 2,
+    borderRadius: 20,
     paddingHorizontal: 10,
+    marginBottom: 15
+    
   },
   checkboxContainer: {
     flexDirection: 'row',
@@ -539,18 +532,7 @@ const styles = StyleSheet.create({
   modalButton: {
     minWidth: 100,
   },
-  confirmationText: {
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  confirmationInput: {
-    height: 40,
-    width: '100%',
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 20,
-    paddingHorizontal: 10,
-  },
+  
   bottomContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -561,4 +543,12 @@ const styles = StyleSheet.create({
   deleteAllButton: {
     marginRight: 10,
   },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
 });
+
+
