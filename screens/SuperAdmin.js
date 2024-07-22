@@ -210,6 +210,7 @@ export default function AdminScreen({ navigation }) {
     setModalAddVisible(false);
     setNewUserCorreo('');
     setNewUserContrasena('');
+    setEditUserRole(''); // Restablece el rol
   };
 
   const handleAddUser = async () => {
@@ -239,7 +240,7 @@ export default function AdminScreen({ navigation }) {
   const handleOpenEditModal = (usuario) => {
     setEditUserId(usuario.id);
     setEditUserCorreo(usuario.correo);
-    setEditUserContrasena('');
+    setEditUserContrasena(usuario.password);
     setEditUserRole(usuario.rol);
     setModalEditVisible(true);
   };
