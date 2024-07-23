@@ -3,6 +3,8 @@ import { View, StyleSheet, Image, TouchableOpacity, Modal, TextInput, FlatList }
 import { IconButton, SegmentedButtons, Card, Title, Text } from 'react-native-paper';
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import * as SQLite from 'expo-sqlite';
+import { useNavigation } from '@react-navigation/native';
+
 
 const HomeRoute = () => {
   const [db, setDb] = useState(null);
@@ -12,6 +14,8 @@ const HomeRoute = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
+
+  const navigation = useNavigation();
 
   useEffect(() => {
     const openDatabaseAndFetch = async () => {
@@ -212,6 +216,10 @@ const HomeRoute = () => {
     }
   };
 
+  const handleLogout = () => {
+    navigation.navigate('Login'); 
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.topIconsContainer}>
@@ -219,13 +227,22 @@ const HomeRoute = () => {
           source={require('../assets/avatar.jpg')}
           style={styles.avatarIcon}
         />
-        <IconButton
-          icon="bell"
-          color="#000"
-          size={30}
-          onPress={() => console.log('Notificaciones')}
-          style={styles.notificationIcon}
-        />
+        <View style={styles.iconButtonsContainer}>
+          <IconButton
+            icon="bell"
+            color="#000"
+            size={30}
+            onPress={() => console.log('Notificaciones')}
+            style={styles.notificationIcon}
+          />
+          <IconButton
+            icon="logout"
+            color="#000"
+            size={30}
+            onPress={handleLogout} // Llamar a la función handleLogout
+            style={styles.logoutIcon}
+          />
+        </View>
       </View>
       <SegmentedButtons
         style={styles.segmentedButtons}
@@ -359,6 +376,9 @@ const styles = StyleSheet.create({
   notificationIcon: {
     alignSelf: 'flex-end',
   },
+  logoutIcon: {
+    marginLeft: 16,
+  },
   segmentedButtons: {
     alignSelf: 'center',
     width: '90%',
@@ -427,5 +447,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
+  },
+  iconButtonsContainer: {
+    flexDirection: 'row',
   },
 });
