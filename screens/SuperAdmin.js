@@ -332,8 +332,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
   },
   content: {
     flex: 1,
@@ -374,7 +372,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
   },
   notificationIcon: {
-    alignSelf: 'flex-end',
+    marginLeft: 16,
   },
   logoutIcon: {
     marginLeft: 16,
@@ -382,7 +380,8 @@ const styles = StyleSheet.create({
   segmentedButtons: {
     alignSelf: 'center',
     width: '90%',
-    marginBottom: 40,
+    marginBottom: 30,
+    marginVertical: 10,
   },
   cardsContainerVertical: {
     flex: 1,
