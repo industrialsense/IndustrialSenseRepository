@@ -1,14 +1,17 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Alert, Image, ActivityIndicator, Text } from "react-native";
+import { View, StyleSheet, Alert, Image, ActivityIndicator, Text, Modal } from "react-native";
 import { TextInput, Button, IconButton } from "react-native-paper";
 import * as SQLite from 'expo-sqlite';
 import bcrypt from 'react-native-bcrypt';
 
 export default function Login({ navigation }) {
+  // Estados para controlar los campos de inicio de sesión y visibilidad de la contraseña
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false); // Estado para controlar la carga
+  const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false); // Estado para controlar la visibilidad del modal
+  const [recoveryEmail, setRecoveryEmail] = useState(''); // Estado para el correo electrónico de recuperación
 
   const handleLogin = async () => {
     if (correo === '' || contrasena === '') {
@@ -16,7 +19,7 @@ export default function Login({ navigation }) {
       return;
     }
 
-    setLoading(true); // Mostrar la pantalla de carga
+    setLoading(true);
 
     const db = await SQLite.openDatabaseAsync('indsense');
     try {
@@ -52,8 +55,19 @@ export default function Login({ navigation }) {
       console.error("Error al iniciar sesión: ", error);
       Alert.alert("Error", "Error al iniciar sesión");
     } finally {
-      setLoading(false); // Ocultar la pantalla de carga
+      setLoading(false);
     }
+  };
+
+  const handlePasswordRecovery = () => {
+    if (recoveryEmail === '') {
+      Alert.alert("Error", "El campo de correo electrónico es obligatorio");
+      return;
+    }
+
+    // Aquí iría la lógica para la recuperación de la contraseña.
+    Alert.alert("Éxito", "Instrucciones para recuperar su contraseña han sido enviadas a su correo electrónico.");
+    setModalVisible(false); // Cerrar el modal después de enviar las instrucciones
   };
 
   if (loading) {
@@ -104,7 +118,40 @@ export default function Login({ navigation }) {
         <Button mode="text" onPress={() => navigation.navigate('Register')} style={styles.botonRegistrarse} labelStyle={styles.botonRegistrarseText}>
           Regístrate Aquí
         </Button>
+        {/* Botón "Olvidé mi contraseña" */}
+        <Button mode="text" onPress={() => setModalVisible(true)} style={styles.botonOlvideContrasena} labelStyle={styles.botonOlvideContrasenaText}>
+          Olvidé mi contraseña
+        </Button>
       </View>
+      {/* Modal para recuperación de contraseña */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalText}>Recuperar Contraseña</Text>
+            <TextInput
+              label="Correo Electrónico"
+              value={recoveryEmail}
+              onChangeText={setRecoveryEmail}
+              style={styles.input}
+              mode="outlined"
+              theme={{ colors: { primary: '#007BFF' } }}
+            />
+            <Button mode="contained" onPress={handlePasswordRecovery} style={styles.botonRecuperar} labelStyle={styles.botonRecuperarText}>
+              Enviar
+            </Button>
+            <Button mode="text" onPress={() => setModalVisible(false)} style={styles.botonCancelar} labelStyle={styles.botonCancelarText}>
+              Cancelar
+            </Button>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -170,6 +217,12 @@ const styles = StyleSheet.create({
   botonRegistrarseText: {
     color: '#003366',
   },
+  botonOlvideContrasena: { // Estilos para el botón "Olvidé mi contraseña"
+    marginTop: 10,
+  },
+  botonOlvideContrasenaText: {
+    color: '#003366',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -180,5 +233,46 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 18,
     color: '#333333',
+  },
+  modalContainer: { // Estilos para el contenedor del modal
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalView: { // Estilos para la vista del modal
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    width: '90%', // Ancho del contenido modal
+    maxWidth: 600, // Ancho máximo recomendado
+  },
+  modalText: { // Estilos para el texto del modal
+    marginBottom: 15,
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  botonRecuperar: { // Estilos para el botón de recuperar contraseña
+    backgroundColor: '#007BFF',
+    marginBottom: 10,
+  },
+  botonRecuperarText: {
+    color: '#fff',
+  },
+  botonCancelar: { // Estilos para el botón de cancelar en el modal
+    marginTop: 10,
+  },
+  botonCancelarText: {
+    color: '#003366',
   },
 });
