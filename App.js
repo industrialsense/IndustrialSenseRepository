@@ -11,10 +11,39 @@ import SuperAdminScreen from './screens/SuperAdmin';
 import AdminScreen from './screens/Admin';
 import UserScreen from './screens/User';
 
+
 export default function App() {
   const [db, setDb] = useState(null);
 
+
+  //Ojo este codigo es cuando se inicia en el nuevo telefono
+
   useEffect(() => {
+    async function initializeDatabase() {
+      const database = await SQLite.openDatabaseAsync('indsense');
+      setDb(database);
+  
+      await database.execAsync(`
+        CREATE TABLE IF NOT EXISTS usuarios (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          correo TEXT NOT NULL,
+          contrasena TEXT NOT NULL,
+          rol TEXT NOT NULL
+        );
+      `);
+  
+      console.log("Table created successfully");
+    }
+  
+    initializeDatabase().catch(error => {
+      console.error("Error initializing database: ", error);
+    });
+  }, []);
+  
+
+//Despues se deja este
+
+  /*seEffect(() => {
     async function initializeDatabase() {
       const database = await SQLite.openDatabaseAsync('indsense');
       setDb(database);
@@ -45,7 +74,7 @@ export default function App() {
     initializeDatabase().catch(error => {
       console.error("Error initializing database: ", error);
     });
-  }, []);
+  }, []);*/
 
   const Stack = createStackNavigator();
   function MyStack() {
@@ -56,7 +85,7 @@ export default function App() {
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="Register" component={Register} />
           <Stack.Screen name="SuperAdmin" component={SuperAdminScreen} />
-          <Stack.Screen name="Admin" component={AdminScreen} options={{ title: 'Base de Datos' }} />
+          <Stack.Screen name="Admin" component={AdminScreen}  />
           <Stack.Screen name="User" component={UserScreen} />
         </Stack.Group>
       </Stack.Navigator>

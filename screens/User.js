@@ -1,271 +1,281 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Image, ScrollView } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { List, Avatar, Divider } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/Ionicons';
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, Modal, Text, TextInput, Image, FlatList } from 'react-native';
+import { Button, Searchbar, DataTable, IconButton, FAB, Checkbox, SegmentedButtons, Card, Title} from 'react-native-paper';
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import * as SQLite from 'expo-sqlite';
+import { useNavigation } from '@react-navigation/native';
+import bcrypt from 'react-native-bcrypt';
 
-// Crea el Stack Navigator una sola vez
-const Stack = createStackNavigator();
+const HomeRoute = () => {
+  const [selectedSegment, setSelectedSegment] = useState('usuarios');
+  const [modalVisible, setModalVisible] = useState(false); // Estado del modal
+  
 
-function HomeScreen({ navigation }) {
-  const [deviceCount, setDeviceCount] = useState(0);
-  const [modalVisible, setModalVisible] = useState(false);
+  const navigation = useNavigation();
 
-  const handleAddDevice = () => {
-    setDeviceCount(deviceCount + 1);
-    setModalVisible(false);
-  };
-
-  const devices = [
-    { id: '1', name: 'Máquina Transportadora 1', image: require('../assets/device1.jpg') },
-    { id: '2', name: 'Máquina Transportadora 2', image: require('../assets/device2.jpg') },
-  ];
-
-  return (
-    <View style={styles.screenContainer}>
-      <View style={styles.deviceCountContainer}>
-        <Text style={styles.deviceCountText}>Dispositivos agregados: {deviceCount}</Text>
-      </View>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Text style={styles.addButtonText}>Agregar Dispositivo</Text>
+ 
+  const renderUsuarios = () => (
+    <View style={styles.cardsContainerVertical}>
+      
+      <TouchableOpacity style={styles.cardTouchable} onPress={() => openModal('usuario')}>
+       
       </TouchableOpacity>
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Selecciona un Dispositivo</Text>
-            <ScrollView>
-              {devices.map((device) => (
-                <TouchableOpacity key={device.id} style={styles.deviceListItem} onPress={handleAddDevice}>
-                  <Image source={device.image} style={styles.deviceIcon} />
-                  <Text style={styles.deviceListItemText}>{device.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Cerrar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <Card style={styles.cardHorizontal}>
+        <Card.Cover source={require('../assets/maquinas.jpg')} />
+        <Card.Content>
+          <Title style={styles.cardTitle}>Máquinas</Title>
+        </Card.Content>
+      </Card>
     </View>
   );
-}
-
-function DevicesScreen({ navigation }) {
-  const [visibleDialog, setVisibleDialog] = useState(false);
-  const [selectedDevice, setSelectedDevice] = useState(null);
-
-  const devices = [
-    { 
-      id: '1', 
-      name: 'Máquina Transportadora 1', 
-      description: 'Esta máquina transporta materiales pesados de un punto a otro en la planta.', 
-      details: 'Detalles técnicos: Capacidad de carga máxima de 1000 kg. Velocidad ajustable.', 
-      image: require('../assets/device1.jpg') 
-    },
-    { 
-      id: '2', 
-      name: 'Máquina Transportadora 2', 
-      description: 'Utilizada para movimientos continuos de materiales en entornos industriales.', 
-      details: 'Detalles técnicos: Sistema de control automático integrado. Diseño ergonómico.', 
-      image: require('../assets/device2.jpg') 
-    },
-  ];
-
-  const showDialog = (device) => {
-    setSelectedDevice(device);
-    setVisibleDialog(true);
-  };
-
-  const hideDialog = () => {
-    setVisibleDialog(false);
-    setSelectedDevice(null);
-  };
-
-  const handleTurnOn = () => {
-    console.log(`Encendiendo ${selectedDevice.name}`);
-    hideDialog();
-  };
-
-  const handleTurnOff = () => {
-    console.log(`Apagando ${selectedDevice.name}`);
-    hideDialog();
-  };
-
-  const handleChangeSpeed = () => {
-    console.log(`Ajustando velocidad de ${selectedDevice.name}`);
-    hideDialog();
+  
+  const handleLogout = () => {
+    Alert.alert(
+      "Confirmación",
+      "¿Estás seguro de que deseas cerrar sesión?",
+      [
+        {
+          text: "Cancelar",
+          onPress: () => console.log("Cancelado"),
+          style: "cancel"
+        },
+        {
+          text: "Cerrar sesión",
+          onPress: () => {
+            Alert.alert("Éxito", "Has cerrado sesión exitosamente.");
+            navigation.navigate('Login');
+          }
+        }
+      ]
+    );
   };
 
   return (
     <View style={styles.container}>
-      <List.Section>
-        {devices.map(device => (
-          <List.Item
-            key={device.id}
-            title={device.name}
-            description={device.description}
-            left={props => <Avatar.Image {...props} source={device.image} />}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => showDialog(device)}
+      <View style={styles.topIconsContainer}>
+        <Image
+          source={require('../assets/avatar.jpg')}
+          style={styles.avatarIcon}
+        />
+        <View style={styles.iconButtonsContainer}>
+          <IconButton
+            icon="bell"
+            color="#000"
+            size={30}
+            onPress={() => console.log('Notificaciones')}
+            style={styles.notificationIcon}
           />
-        ))}
-      </List.Section>
-      <Divider />
+          <IconButton
+            icon="logout"
+            color="#000"
+            size={30}
+            onPress={handleLogout} // Llamar a la función handleLogout
+            style={styles.logoutIcon}
+          />
+        </View>
+      </View>
+      <SegmentedButtons
+        style={styles.segmentedButtons}
+        value={selectedSegment}
+        onValueChange={setSelectedSegment}
+        buttons={[
+          { value: 'usuarios', label: 'Roles' },
+          { value: 'maquinas', label: 'Dispositivos' },
+        ]}
+      />
+      {selectedSegment === 'usuarios' ? renderUsuarios() : renderMaquinas()}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible} 
+      >
+      </Modal>
     </View>
   );
-}
+};
 
-function ProfileScreen() {
-  const user = {
-    name: 'Nombre del Usuario',
-    email: 'usuario@example.com',
+const HelpRoute = () => (
+  <View style={styles.routeContainer}>
+    <Text>Help Screen</Text>
+  </View>
+);
+
+const MachinesRoute = () => (
+  <View style={styles.routeContainer}>
+    <Text>Machines Screen</Text>
+  </View>
+);
+
+const SettingsRoute = () => (
+  <View style={styles.routeContainer}>
+    <Text>Settings Screen</Text>
+  </View>
+);
+
+export default function App() {
+  const [selectedRoute, setSelectedRoute] = useState("home");
+
+  const renderScene = () => {
+    switch (selectedRoute) {
+      case "home":
+        return <HomeRoute />;
+      case "help":
+        return <HelpRoute />;
+      case "machines":
+        return <MachinesRoute />;
+      case "settings":
+        return <SettingsRoute />;
+      default:
+        return <HomeRoute />;
+    }
   };
 
   return (
-    <View style={styles.screenContainer}>
-      <Avatar.Image
-        source={require('../assets/avatar.jpg')}
-        size={150}
-        style={styles.avatar}
-      />
-      <Text style={styles.screenText}>{user.name}</Text>
-      <Text style={styles.userInfoText}>{user.email}</Text>
-      <TouchableOpacity style={styles.editProfileButton}>
-        <Text style={styles.editProfileButtonText}>Editar Perfil</Text>
-      </TouchableOpacity>
+    <View style={styles.container}>
+      <View style={styles.content}>
+        {renderScene()}
+      </View>
+      <View style={styles.navbar}>
+        <TouchableOpacity style={styles.navItem} onPress={() => setSelectedRoute("home")}>
+          <Icon name="home" size={30} color={selectedRoute === "home" ? "#7E57C2" : "#B39DDB"} />
+          <Text style={selectedRoute === "home" ? styles.navTextSelected : styles.navText}>Inicio</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => setSelectedRoute("machines")}>
+          <Icon name="devices" size={30} color={selectedRoute === "machines" ? "#7E57C2" : "#B39DDB"} />
+          <Text style={selectedRoute === "machines" ? styles.navTextSelected : styles.navText}>Máquinas</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => setSelectedRoute("help")}>
+          <Icon name="account-plus" size={30} color={selectedRoute === "help" ? "#7E57C2" : "#B39DDB"} />
+          <Text style={selectedRoute === "help" ? styles.navTextSelected : styles.navText}>Soporte</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => setSelectedRoute("settings")}>
+          <Icon name="cog" size={30} color={selectedRoute === "settings" ? "#7E57C2" : "#B39DDB"} />
+          <Text style={selectedRoute === "settings" ? styles.navTextSelected : styles.navText}>Configuración</Text>
+        </TouchableOpacity>
+      </View>
     </View>
-  );
-}
-
-export default function App() {
-  return (
-    <NavigationContainer independent={true}>
-      <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Devices" component={DevicesScreen} />
-        <Stack.Screen name="Profile" component={ProfileScreen} />
-        {/* Asegúrate de definir la pantalla Login si es necesario */}
-      </Stack.Navigator>
-    </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  avatar: {
-    marginTop: 30,
-    marginBottom: 20,
-  },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    position: 'relative',
   },
-  screenContainer: {
-    flex: 3,
-    justifyContent: 'flex-start',
+  content: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  navbar: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: 5,
+  },
+  navItem: {
+    justifyContent: 'center', // Alinear íconos y texto verticalmente
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
   },
-  screenText: {
-    fontSize: 20,
-    color: '#000000',
-    marginVertical: 10,
+  navText: {
+    textAlign: "center",
+    color: "#000",
   },
-  deviceListItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    marginVertical: 5,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 10,
+  navTextSelected: {
+    textAlign: "center",
+    color: "#7E57C2",
   },
-  deviceIcon: {
-    width: 50,
-    height: 50,
-    marginRight: 15,
-  },
-  deviceListItemText: {
-    fontSize: 16,
-    color: '#000000',
-  },
-  modalOverlay: {
+  routeContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  topIconsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  avatarIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  notificationIcon: {
+    marginLeft: 16,
+  },
+  logoutIcon: {
+    marginLeft: 16,
+  },
+  segmentedButtons: {
+    alignSelf: 'center',
+    width: '90%',
+    marginBottom: 30,
+    marginVertical: 10,
+  },
+  cardsContainerVertical: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+  cardVertical: {
+    marginBottom: 33,
+    width: '100%',
+    height: 230,
+  },
+  cardHorizontal: {
+    marginBottom: 20,
+    width: '100%',
+    height: 230,
+  },
+  cardTitle: {
+    fontSize: 16, // Reducir el tamaño del título
+    marginBottom: 8,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fondo semi-transparente
   },
   modalContent: {
-    width: '80%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    backgroundColor: '#fff',
     padding: 20,
+    borderRadius: 10,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    width: '90%', // Ancho del contenido modal
+    maxWidth: 600, // Ancho máximo recomendado
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  searchInput: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 10,
     marginBottom: 10,
-    color: '#000000',
+    width: '100%', // Ocupa todo el ancho disponible
   },
-  deviceCountContainer: {
-    marginBottom: 20,
-    padding: 20,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 10,
-    marginTop: 100,
+  tableRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    width: '100%',
   },
-  deviceCountText: {
-    fontSize: 18,
-    color: '#000000',
+  tableCell: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
   },
-  closeButton: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: '#FFA500',
-    borderRadius: 10,
-  },
-  closeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-  addButton: {
-    padding: 10,
-    backgroundColor: '#007BFF',
-    borderRadius: 10,
-    marginTop: 20,
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-  editProfileButton: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: '#007BFF',
-    borderRadius: 10,
-  },
-  editProfileButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-  userInfoText: {
-    fontSize: 16,
-    color: '#000000',
-    marginVertical: 5,
+  iconButtonsContainer: {
+    flexDirection: 'row',
   },
 });
