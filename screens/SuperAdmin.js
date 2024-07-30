@@ -659,7 +659,7 @@ const handleRoleChange = (role) => {
           color="#008000"
         />
         <Checkbox.Item
-          label="Rol: Usuario"
+          label="Usuario"
           status={editUserRole === 'usuario' ? 'checked' : 'unchecked'}
           onPress={() => handleRoleChange('usuario')}
           color="#008000"
@@ -728,11 +728,39 @@ const MachinesRoute = () => (
   </View>
 );
 
-const SettingsRoute = () => (
-  <View style={styles.routeContainer}>
-    <Text>Settings Screen</Text>
-  </View>
-);
+const SettingsRoute = () => {
+  const settingsOptions = [
+    { title: 'Privacidad', icon: 'shield-lock-outline' },
+    { title: 'Políticas', icon: 'file-document-outline' },
+    { title: 'Accesibilidad', icon: 'accessibility' },
+    { title: 'Calificación', icon: 'star-outline' },
+  ];
+
+  return (
+    <View style={styles.settingsContainer}>
+      <View style={styles.header}>
+        <Image
+          source={require('../assets/logo2.png')} // Asegúrate de tener el logo en la carpeta de assets
+          style={styles.logo}
+        />
+      </View>
+      <FlatList
+        data={settingsOptions}
+        keyExtractor={(item) => item.title}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.optionContainer}>
+            <IconButton
+              icon={item.icon}
+              size={30}
+              color="#003366"
+            />
+            <Text style={styles.optionText}>{item.title}</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  );
+};
 
 export default function App() {
   const [selectedRoute, setSelectedRoute] = useState("home");
@@ -782,16 +810,17 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   content: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
   },
   navbar: {
     flexDirection: "row",
     justifyContent: "space-around",
     paddingVertical: 5,
+    backgroundColor: '#FFFFFF',
   },
   navItem: {
     justifyContent: 'center', // Alinear íconos y texto verticalmente
@@ -815,6 +844,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    width: '100%',
   },
   avatarIcon: {
     width: 50,
@@ -836,6 +868,7 @@ const styles = StyleSheet.create({
   cardsContainerVertical: {
     flex: 1,
     flexDirection: 'column',
+    paddingHorizontal: 20,
   },
   cardVertical: {
     marginBottom: 33,
@@ -1004,5 +1037,33 @@ const styles = StyleSheet.create({
     color: 'red',
     marginBottom: 10,
     textAlign: 'justify',
+  },
+  settingsContainer: {
+    flex: 1,
+    padding: 20,
+    paddingVertical: 40,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 50,
+    padding: 50,
+  },
+  optionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  optionText: {
+    fontSize: 18,
+    color: '#000',
+    marginLeft: 10,
   },
 });

@@ -5,11 +5,11 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import * as SQLite from 'expo-sqlite';
 import { useNavigation } from '@react-navigation/native';
 import bcrypt from 'react-native-bcrypt';
+import TextCarousel from './TextCarousel';
 
 const HomeRoute = () => {
   const [db, setDb] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
-  const [selectedSegment, setSelectedSegment] = useState('usuarios');
   const [modalVisible, setModalVisible] = useState(false); // Estado del modal
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -87,27 +87,6 @@ const HomeRoute = () => {
   const closeModal = () => {
     setModalVisible(false);
   };
-
-  const renderUsuarios = () => (
-    <View style={styles.cardsContainerVertical}>
-      
-      <TouchableOpacity style={styles.cardTouchable} onPress={() => openModal('usuario')}>
-        <Card style={styles.cardVertical}>
-          <Card.Cover source={require('../assets/usuario.jpg')} />
-          <Card.Content>
-            <Title style={styles.cardTitle}>Usuarios</Title>
-          </Card.Content>
-        </Card>
-      </TouchableOpacity>
-      <Card style={styles.cardHorizontal}>
-        <Card.Cover source={require('../assets/maquinas.jpg')} />
-        <Card.Content>
-          <Title style={styles.cardTitle}>Máquinas</Title>
-        </Card.Content>
-      </Card>
-    </View>
-  );
-
 
   const renderModalContent = () => {
     let content;
@@ -247,24 +226,23 @@ const HomeRoute = () => {
           />
         </View>
       </View>
-      <SegmentedButtons
-        style={styles.segmentedButtons}
-        value={selectedSegment}
-        onValueChange={setSelectedSegment}
-        buttons={[
-          { value: 'usuarios', label: 'Roles' },
-          { value: 'maquinas', label: 'Dispositivos' },
-        ]}
-      />
-      {selectedSegment === 'usuarios' ? renderUsuarios() : renderMaquinas()}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={closeModal}
-      >
-        {renderModalContent()}
-      </Modal>
+      <View style={styles.cardsContainerVertical}>
+      <TouchableOpacity style={styles.cardTouchable} onPress={() => openModal('usuario')}>
+        <Card style={styles.cardVertical}>
+          <Card.Cover source={require('../assets/usuario.jpg')} />
+          <Card.Content>
+            <Title style={styles.cardTitle}>Usuarios</Title>
+          </Card.Content>
+        </Card>
+      </TouchableOpacity>
+      <Card style={styles.cardHorizontal}>
+        <Card.Cover source={require('../assets/maquinas.jpg')} />
+        <Card.Content>
+          <Title style={styles.cardTitle}>Máquinas</Title>
+        </Card.Content>
+      </Card>
+    </View>
+    <TextCarousel/>
     </View>
   );
 };
@@ -709,11 +687,39 @@ const MachinesRoute = () => (
   </View>
 );
 
-const SettingsRoute = () => (
-  <View style={styles.routeContainer}>
-    <Text>Settings Screen</Text>
-  </View>
-);
+const SettingsRoute = () => {
+  const settingsOptions = [
+    { title: 'Privacidad', icon: 'shield-lock-outline' },
+    { title: 'Políticas', icon: 'file-document-outline' },
+    { title: 'Accesibilidad', icon: 'accessibility' },
+    { title: 'Calificación', icon: 'star-outline' },
+  ];
+
+  return (
+    <View style={styles.settingsContainer}>
+      <View style={styles.header}>
+        <Image
+          source={require('../assets/logo2.png')} // Asegúrate de tener el logo en la carpeta de assets
+          style={styles.logo}
+        />
+      </View>
+      <FlatList
+        data={settingsOptions}
+        keyExtractor={(item) => item.title}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.optionContainer}>
+            <IconButton
+              icon={item.icon}
+              size={30}
+              color="#003366"
+            />
+            <Text style={styles.optionText}>{item.title}</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  );
+};
 
 export default function App() {
   const [selectedRoute, setSelectedRoute] = useState("home");
@@ -740,19 +746,19 @@ export default function App() {
       </View>
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navItem} onPress={() => setSelectedRoute("home")}>
-          <Icon name="home" size={30} color={selectedRoute === "home" ? "#7E57C2" : "#B39DDB"} />
+          <Icon name="home" size={30} color={selectedRoute === "home" ? "#FFA500" : "#FFD699"} />
           <Text style={selectedRoute === "home" ? styles.navTextSelected : styles.navText}>Inicio</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => setSelectedRoute("addUser")}>
-          <Icon name="account-plus" size={30} color={selectedRoute === "addUser" ? "#7E57C2" : "#B39DDB"} />
+          <Icon name="account-plus" size={30} color={selectedRoute === "addUser" ? "#FFA500" : "#FFD699"} />
           <Text style={selectedRoute === "addUser" ? styles.navTextSelected : styles.navText}>Usuarios</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => setSelectedRoute("machines")}>
-          <Icon name="devices" size={30} color={selectedRoute === "machines" ? "#7E57C2" : "#B39DDB"} />
+          <Icon name="devices" size={30} color={selectedRoute === "machines" ? "#FFA500" : "#FFD699"} />
           <Text style={selectedRoute === "machines" ? styles.navTextSelected : styles.navText}>Máquinas</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => setSelectedRoute("settings")}>
-          <Icon name="cog" size={30} color={selectedRoute === "settings" ? "#7E57C2" : "#B39DDB"} />
+          <Icon name="cog" size={30} color={selectedRoute === "settings" ? "#FFA500" : "#FFD699"} />
           <Text style={selectedRoute === "settings" ? styles.navTextSelected : styles.navText}>Configuración</Text>
         </TouchableOpacity>
       </View>
@@ -763,16 +769,17 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   content: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
   },
   navbar: {
     flexDirection: "row",
     justifyContent: "space-around",
     paddingVertical: 5,
+    backgroundColor: '#FFFFFF',
   },
   navItem: {
     justifyContent: 'center', // Alinear íconos y texto verticalmente
@@ -784,7 +791,7 @@ const styles = StyleSheet.create({
   },
   navTextSelected: {
     textAlign: "center",
-    color: "#7E57C2",
+    color: "#FFA500",
   },
   routeContainer: {
     flex: 1,
@@ -795,7 +802,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 30,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    width: '100%',
   },
   avatarIcon: {
     width: 50,
@@ -808,15 +818,10 @@ const styles = StyleSheet.create({
   logoutIcon: {
     marginLeft: 16,
   },
-  segmentedButtons: {
-    alignSelf: 'center',
-    width: '90%',
-    marginBottom: 30,
-    marginVertical: 10,
-  },
   cardsContainerVertical: {
     flex: 1,
     flexDirection: 'column',
+    paddingHorizontal: 20,
   },
   cardVertical: {
     marginBottom: 33,
@@ -985,5 +990,33 @@ const styles = StyleSheet.create({
     color: 'red',
     marginBottom: 10,
     textAlign: 'justify',
+  },
+  settingsContainer: {
+    flex: 1,
+    padding: 20,
+    paddingVertical: 40,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 50,
+    padding: 50,
+  },
+  optionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  optionText: {
+    fontSize: 18,
+    color: '#000',
+    marginLeft: 10,
   },
 });
