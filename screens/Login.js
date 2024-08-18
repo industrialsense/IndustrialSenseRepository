@@ -39,7 +39,7 @@ export default function Login({ navigation }) {
               navigation.navigate('Admin');
               break;
             case 'usuario':
-              navigation.navigate('User');
+              navigation.navigate('User', { userEmail: result.correo, userID: result.id });
               break;
             default:
               Alert.alert("Error", "Rol desconocido");

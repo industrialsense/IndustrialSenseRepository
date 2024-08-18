@@ -1,16 +1,207 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, Modal, Text, TextInput, Image, FlatList, Linking } from 'react-native';
-import { Button, Searchbar, DataTable, IconButton, FAB, Checkbox, SegmentedButtons, Card, Title, List} from 'react-native-paper';
+import { Button, IconButton, FAB, Checkbox, Card, Title, Avatar, Switch} from 'react-native-paper';
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import * as SQLite from 'expo-sqlite';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import bcrypt from 'react-native-bcrypt';
 import TextCarousel from './TextCarousel';
 
 const HomeRoute = () => {
-  const [userEmail] = useState('usuario@ejemplo.com');
   const navigation = useNavigation();
+  const route = useRoute();
+  const { userEmail, userID } = route.params;
+  const [db, setDb] = useState(null);
+  const [selectedSegment, setSelectedSegment] = useState('usuarios');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [assignedMachines, setAssignedMachines] = useState([]);
+  const [ipInput, setIpInput] = useState('');
+  const [imagen, setImagen] = useState('');
+  const [machineData, setMachineData] = useState(null);
+  const [contador, setContador] = useState(0);  // Inicializamos el contador en 0
+  const [isSwitchOn, setIsSwitchOn] = useState(false);
+
+  useEffect(() => {
+    const openDatabaseAndFetch = async () => {
+      try {
+        const database = await SQLite.openDatabaseAsync('indsense');
+        setDb(database);
+        console.log("Database opened successfully");
+
+        await fetchNotifications(database);
+
+        if (userID) {
+          await fetchAssignedMachines(database);
+        }
+      } catch (error) {
+        console.error('Error al abrir la base de datos: ', error);
+      }
+    };
+
+    openDatabaseAndFetch();
+  }, [userID]);
+
+  useEffect(() => {
+    if (db && userID) {
+      fetchAssignedMachines(db);
+    }
+  }, [db, userID]);
+
+  const fetchNotifications = async (database) => {
+    try {
+      const data = await database.getAllAsync(
+        'SELECT * FROM notificaciones WHERE usuario_id = ?',
+        [userID]
+      );
+      console.log("Notifications fetched: ", data);
+      setNotifications(data);
+    } catch (error) {
+      console.error('Error al obtener notificaciones: ', error);
+    }
+  };
+
+  const fetchMachineData = async (ip) => {
+    if (!validateIp(ip)) {
+      Alert.alert('Error', 'La dirección IP no es válida. Debe estar en el formato correcto y cada octeto no debe ser mayor a 255.');
+      return;
+    }
   
+    try {
+      console.log("Entered IP: ", ip);
+  
+      const notificationsData = await db.getAllAsync(
+        'SELECT * FROM notificaciones WHERE usuario_id = ?',
+        [userID]
+      );
+      console.log("Notifications data: ", notificationsData);
+  
+      const notification = notificationsData.find(notification => {
+        const ipMatch = notification.mensaje.match(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/);
+        return ipMatch && ipMatch[0] === ip;
+      });
+      console.log("Found notification: ", notification);
+  
+      if (!notification) {
+        Alert.alert('Error', 'La IP no coincide con el mensaje de notificación.');
+        return;
+      }
+  
+      const existingMachine = await db.getFirstAsync(
+        'SELECT * FROM maquinas WHERE ip = ?',
+        [ip]
+      );
+  
+      if (existingMachine) {
+        if (existingMachine.usuario_id !== userID) {
+          Alert.alert('Error', 'Esta IP ya está asignada a otro usuario.');
+          return;
+        }
+      } else {
+        await db.runAsync(
+          'UPDATE maquinas SET usuario_id = ? WHERE ip = ?',
+          [userID, ip]
+        );
+      }
+  
+      const assignedMachine = await db.getFirstAsync(
+        'SELECT * FROM maquinasAsignadas WHERE usuario_id = ? AND maquina_id = ?',
+        [userID, existingMachine.id]
+      );
+  
+      if (!assignedMachine) {
+        await db.runAsync(
+          'INSERT INTO maquinasAsignadas (usuario_id, maquina_id) VALUES (?, ?)',
+          [userID, existingMachine.id]
+        );
+      }
+  
+      Alert.alert('Éxito', 'La máquina ha sido asignada a su cuenta.');
+      // Asegúrate de que la base de datos esté completamente inicializada antes de hacer la consulta
+      if (db) {
+        await fetchAssignedMachines(db);
+      }
+    } catch (error) {
+      console.error('Error al asociar la máquina al usuario: ', error);
+      Alert.alert('Error', 'No se pudo asociar la máquina al usuario.');
+    }
+  };
+  
+  const validateIp = (ip) => {
+    const regex = /^([0-9]{1,3}\.){3}[0-9]{1,3}$/;
+    if (!regex.test(ip)) {
+      return false;
+    }
+    const parts = ip.split('.').map(Number);
+    return parts.length === 4 && parts.every(part => Number.isInteger(part) && part >= 0 && part <= 255);
+  };
+  
+  const handleIpSubmit = () => {
+    if (ipInput) {
+      fetchMachineData(ipInput);
+    } else {
+      Alert.alert('Error', 'Debe introducir una IP.');
+    }
+  };
+  
+  const fetchAssignedMachines = async (database) => {
+    try {
+      if (!database) {
+        console.error('Error al obtener máquinas asignadas: Database is not initialized');
+        return;
+      }
+
+      console.log("Fetching assigned machines for user ID:", userID);
+      const data = await database.getAllAsync(
+        `SELECT m.nombre, m.ip, m.descripcion, m.imagen 
+         FROM maquinasAsignadas ma 
+         JOIN maquinas m ON ma.maquina_id = m.id 
+         WHERE ma.usuario_id = ?`,
+        [userID]
+      );
+
+      console.log("Assigned machines fetched: ", data);
+
+      if (data.length > 0) {
+        setAssignedMachines(data);
+      } else {
+        console.log("No assigned machines found.");
+      }
+    } catch (error) {
+      console.error('Error al obtener máquinas asignadas: ', error);
+    }
+  };
+
+  const getImage = (imageId) => {
+    switch (imageId) {
+      case 1:
+        return require('../assets/device1.jpg');
+      case 2:
+        return require('../assets/device2.jpg');
+      default:
+        return require('../assets/Logo.png'); // Imagen por defecto
+    }
+  };
+
+  const selectImage = (imageId) => {
+    setImagen(imageId);
+  };
+
+  const incrementarContador = () => {
+    setContador(prev => Math.min(prev + 5, 200)); // Incrementar en pasos de 5 hasta 200
+  };
+
+  const decrementarContador = () => {
+    setContador(prev => Math.max(prev - 5, 0)); // Decrementar en pasos de 5 hasta 0
+  };
+
+  const handleSwitchChange = (value) => {
+    setIsSwitchOn(value);
+    if (db) {
+      db.runAsync('UPDATE maquinas SET estatus = ? WHERE usuario_id = ?', [value, userID]);
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert(
       "Confirmación",
@@ -32,6 +223,165 @@ const HomeRoute = () => {
     );
   };
 
+  const openModal = (segment) => {
+    setSelectedSegment(segment);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+  };
+
+  const renderNotificaciones = () => (
+    <View style={styles.notificationModalContent}>
+      <Text style={styles.notificationModalTitle}>Tus Notificaciones</Text>
+      <FlatList
+        data={notifications}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.notificationItem}>
+            <Text style={styles.notificationText}>{item.mensaje}</Text>
+          </View>
+        )}
+      />
+      <TouchableOpacity onPress={closeModal} style={styles.notificationCloseButton}>
+        <Text style={styles.notificationCloseButtonText}>Cerrar</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderMaquinaria = () => (
+    <View style={styles.containerRenderMachine}>
+      <Text style={styles.titleRenderMachine}>Agregar IP de Máquina</Text>
+      <TextInput
+        style={styles.inputRenderMachine}
+        placeholder="Introduce la IP de la máquina"
+        value={ipInput}
+        onChangeText={setIpInput}
+      />
+      <Button 
+        mode="contained" 
+        onPress={handleIpSubmit} 
+        style={styles.buttonRenderMachine}
+      >
+        <Text style={styles.buttonTextRenderMachine}>Agregar la Maquina</Text>
+      </Button>
+      {machineData && (
+        <View style={styles.machineDetailsRenderMachine}>
+          <Text style={styles.machineTextRenderMachine}>Nombre: {machineData.nombre}</Text>
+          <Text style={styles.machineTextRenderMachine}>Puerto: {machineData.puerto}</Text>
+          <Text style={styles.machineTextRenderMachine}>Descripción: {machineData.descripcion}</Text>
+          <Avatar.Image 
+            source={getImage(machineData.imagen)} 
+            size={100} 
+            style={styles.avatarRenderMachine} 
+          />
+        </View>
+      )}
+      <TouchableOpacity onPress={closeModal} style={styles.closeButtonRenderMachine}>
+        <Text style={styles.closeButtonTextRenderMachine}>Cerrar</Text>
+      </TouchableOpacity>
+    </View>
+  )
+
+  const renderAsignadas = () => (
+    <View style={styles.containerRenderAsign}>
+      <FlatList
+        data={assignedMachines}
+        keyExtractor={(item) => item.ip.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.machineItemRenderAsign}>
+            <Text style={styles.textRenderAsign}>Nombre: {item.nombre}</Text>
+            <Text style={styles.textRenderAsign}>IP: {item.ip}</Text>
+            <Text style={styles.textRenderAsign}>Descripción: {item.descripcion}</Text>
+            <TouchableOpacity onPress={() => openModal('cambiar')}>
+              <Avatar.Image 
+                source={getImage(parseInt(item.imagen))} 
+                size={100} 
+                style={styles.avatarRenderAsign} 
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+      <TouchableOpacity onPress={closeModal} style={styles.closeButtonRenderAsign}>
+        <Text style={styles.closeButtonTextRenderAsign}>Cerrar</Text>
+      </TouchableOpacity>
+    </View>
+  )
+
+  const renderCambioMaquina = () => {
+  
+    return (
+      <FlatList
+        data={assignedMachines}
+        keyExtractor={(item) => item.ip.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.containerCambioMaquina}>
+            <Avatar.Image 
+              source={getImage(parseInt(item.imagen))} // Usar `item.imagen` para obtener la imagen correcta
+              size={100} 
+              style={styles.avatarCambioMaquina} 
+            />
+            <Text style={styles.textLabel}>Ajustar la velocidad</Text>
+            <View style={styles.contadorContainer}>
+              <IconButton
+                icon="minus"
+                color="red"
+                size={30}
+                onPress={decrementarContador} // Disminuir la velocidad
+              />
+              <Text style={styles.contadorText}>{contador}</Text>
+              <IconButton
+                icon="plus"
+                color="green"
+                size={30}
+                onPress={incrementarContador} // Aumentar la velocidad
+              />
+            </View>
+            <Text style={styles.textLabel}>Encender/Apagar</Text>
+            <Switch
+              value={isSwitchOn}
+              onValueChange={handleSwitchChange}
+              style={styles.switch}
+            />
+            <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+    );
+  }
+
+  const renderModalContent = () => {
+    let content;
+    switch (selectedSegment) {
+      case 'notificacion':
+        content = renderNotificaciones();
+        break;
+      case 'maquinas':
+        content = renderMaquinaria();
+        break;
+      case 'peticiones':
+        content = renderAsignadas();
+        break;
+      case 'cambiar':
+        content = renderCambioMaquina();
+        break;
+      default:
+        content = null;
+    }
+
+    return (
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          {content}
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.topIconsContainer}>
@@ -44,31 +394,104 @@ const HomeRoute = () => {
             icon="bell"
             color="#000"
             size={30}
-            onPress={() => console.log('Notificaciones')}
+            onPress={() => openModal('notificacion')}
             style={styles.notificationIcon}
           />
           <IconButton
             icon="logout"
             color="#000"
             size={30}
-            onPress={handleLogout} // Llamar a la función handleLogout
+            onPress={handleLogout}
             style={styles.logoutIcon}
           />
         </View>
       </View>
       <View style={styles.greetingContainer}>
-        <Text style={styles.greetingText}>Bienvenido, {userEmail}</Text>
+        <Text style={styles.greetingText}>Bienvenido: {userEmail} </Text>
         <Text style={styles.greetingDescription}>Aquí puedes gestionar tus máquinas y ver las últimas novedades.</Text>
       </View>
-      <View style={styles.cardsContainerVertical}>
-        <Card style={styles.cardHorizontal}>
-          <Card.Cover source={require('../assets/maquinas.jpg')} />
-          <Card.Content>
-            <Title style={styles.cardTitle}>Máquinas</Title>
-          </Card.Content>
-        </Card>
+      <ScrollView>
+        <View style={styles.cardsContainerVertical}>
+          <TouchableOpacity onPress={() => openModal('maquinas')}>
+            <Card style={styles.cardHorizontal}>
+              <Card.Cover source={require('../assets/maquinas.jpg')} />
+              <Card.Content>
+                <Title style={styles.cardTitle}>Agregar Maquinas</Title>
+              </Card.Content>
+            </Card>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => openModal('peticiones')}>
+            <Card style={styles.cardHorizontal}>
+              <Card.Cover source={require('../assets/peticiones.jpg')} />
+              <Card.Content>
+                <Title style={styles.cardTitle}>Máquinas Personales</Title>
+              </Card.Content>
+            </Card>
+          </TouchableOpacity>
       </View>
-      <TextCarousel/>
+      </ScrollView>
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={closeModal}
+      >
+        {renderModalContent()}
+      </Modal>
+    </View>
+  );
+};
+
+const MachinesRoute = () => {
+  const route = useRoute();
+  const { userEmail, userID } = route.params;
+  const [db, setDb] = useState(null);
+  const [message, setMessage] = useState('');
+  
+  useEffect(() => {
+    const openDatabaseAndFetch = async () => {
+      const database = await SQLite.openDatabaseAsync('indsense');
+      setDb(database);
+    };
+    openDatabaseAndFetch();
+  }, []);
+
+  const handleRequest = async () => {
+    if (message.trim() === '') {
+      Alert.alert("Error", "El mensaje de solicitud no puede estar vacío");
+      return;
+    }
+
+    try {
+      const result = await db.runAsync(
+        'INSERT INTO solicitudes (usuario_id, mensaje) VALUES (?, ?)',
+        [userID, message]
+      );
+
+      if (result.changes > 0) {
+        Alert.alert("Éxito", "Solicitud enviada exitosamente.");
+        setMessage('');
+      } else {
+        Alert.alert("Error", "No se pudo enviar la solicitud.");
+      }
+    } catch (error) {
+      console.error("Error al enviar la solicitud: ", error);
+      Alert.alert("Error", "Error al enviar la solicitud.");
+    }
+  };
+
+  return (
+    <View style={styles.containerSolicitudMaquina}>
+      <Text style={styles.titleSolicitudMaquina}>Solicita una máquina:</Text>
+      <TextInput
+        style={styles.inputSolicitudMaquina}
+        placeholder="Escribe tu mensaje de solicitud"
+        value={message}
+        onChangeText={setMessage}
+      />
+      <TouchableOpacity onPress={handleRequest} style={styles.buttonSolicitudMaquina}>
+        <Text style={styles.buttonTextSolicitudMaquina}>Enviar solicitud</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -135,12 +558,6 @@ const HelpRoute = () => {
     </View>
   );
 };
-
-const MachinesRoute = () => (
-  <View style={styles.routeContainer}>
-    <Text>Machines Screen</Text>
-  </View>
-);
 
 const SettingsRoute = () => {
   const settingsOptions = [
@@ -225,6 +642,235 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  containerCambioMaquina: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  avatarCambioMaquina: {
+    marginBottom: 20,
+  },
+  textLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    color: '#333',
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  speedText: {
+    fontSize: 14,
+    color: '#555',
+    marginVertical: 10,
+  },
+  switch: {
+    marginVertical: 10,
+  },
+  closeButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#007bff',
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  containerSolicitudMaquina: {
+    flex: 1,
+    backgroundColor: '#FAFAFA', // Fondo claro para un aspecto limpio y moderno
+    padding: 20,
+    justifyContent: 'center', // Centrar el contenido verticalmente
+  },
+  titleSolicitudMaquina: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+  },
+  inputSolicitudMaquina: {
+    width: '100%',
+    padding: 12,
+    marginVertical: 15,
+    backgroundColor: '#FFF',
+    borderRadius: 8,
+    borderColor: '#CCC',
+    borderWidth: 1,
+  },
+  buttonSolicitudMaquina: {
+    backgroundColor: '#28A745', // Verde para indicar acción positiva
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonTextSolicitudMaquina: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  containerRenderMachine: {
+    backgroundColor: '#F5F5F5', // Fondo claro para contraste
+    padding: 20,
+    width: '90%',
+  },
+  titleRenderMachine: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+  },
+  inputRenderMachine: {
+    width: '100%',
+    padding: 10,
+    marginVertical: 10,
+    backgroundColor: '#FFF',
+    borderRadius: 5,
+    borderColor: '#CCC',
+    borderWidth: 1,
+  },
+  buttonRenderMachine: {
+    backgroundColor: '#007BFF', // Azul vibrante para un botón llamativo
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonTextRenderMachine: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  machineDetailsRenderMachine: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: '#E0E0E0', // Gris claro para destacar la sección de detalles
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  machineTextRenderMachine: {
+    fontSize: 18,
+    color: '#333',
+    marginBottom: 5,
+  },
+  avatarRenderMachine: {
+    marginTop: 10,
+    alignSelf: 'center',
+    borderRadius: 50, // Hacer la imagen del avatar circular
+  },
+  closeButtonRenderMachine: {
+    marginTop: 20,
+    backgroundColor: '#FF5C5C', // Rojo para el botón de cerrar
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  closeButtonTextRenderMachine: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  containerRenderAsign: {
+    backgroundColor: '#F8F8F8', // Fondo claro para un look limpio
+    padding: 20,
+    width: '90%',
+  },
+  machineItemRenderAsign: {
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: '#E0E0E0', // Fondo gris claro para destacar cada ítem
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  textRenderAsign: {
+    fontSize: 18,
+    color: '#333',
+    marginBottom: 5,
+  },
+  avatarRenderAsign: {
+    marginTop: 10,
+    alignSelf: 'center',
+    borderRadius: 50, // Hacer la imagen del avatar circular
+  },
+  closeButtonRenderAsign: {
+    marginTop: 20,
+    backgroundColor: '#FF5C5C', // Rojo para el botón de cerrar
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  closeButtonTextRenderAsign: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  notificationModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fondo semi-transparente
+  },
+  notificationModalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    width: '90%', // Ancho del contenido modal
+    maxWidth: 600, // Ancho máximo recomendado
+  },
+  notificationModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  notificationItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    width: '100%',
+  },
+  notificationText: {
+    fontSize: 16,
+    color: '#000',
+  },
+  notificationCloseButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#007BFF',
+    borderRadius: 5,
+  },
+  notificationCloseButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
   containerHelp: {
     flex: 1,

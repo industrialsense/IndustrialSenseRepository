@@ -15,14 +15,11 @@ import UserScreen from './screens/User';
 export default function App() {
   const [db, setDb] = useState(null);
 
-
-  //Ojo este codigo es cuando se inicia en el nuevo telefono
-
   useEffect(() => {
     async function initializeDatabase() {
       const database = await SQLite.openDatabaseAsync('indsense');
       setDb(database);
-  
+
       await database.execAsync(`
         CREATE TABLE IF NOT EXISTS usuarios (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,50 +28,68 @@ export default function App() {
           rol TEXT NOT NULL
         );
       `);
-  
-      console.log("Table created successfully");
+
+      await database.execAsync(`
+        CREATE TABLE IF NOT EXISTS maquinas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            ip TEXT NOT NULL,
+            puerto INTEGER NOT NULL,
+            descripcion TEXT,
+            velocidad REAL,
+            imagen TEXT,
+            estatus BOOLEAN,
+            usuario_id INTEGER,
+            FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+          );
+      `);
+
+      await database.execAsync(`
+        CREATE TABLE IF NOT EXISTS solicitudes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER,
+            mensaje TEXT,
+            ip_asignada TEXT,
+            FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+          );
+      `);
+
+      await database.execAsync(`
+        CREATE TABLE IF NOT EXISTS solicitudesAprobadas (
+          id INTEGER PRIMARY KEY,
+          usuario_id INTEGER,
+          mensaje TEXT,
+          ip_asignada TEXT,
+          FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+        );  
+      `);
+
+      await database.execAsync(`
+        CREATE TABLE IF NOT EXISTS notificaciones (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL,
+            mensaje TEXT NOT NULL,
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+          );
+        `);
+
+      await database.execAsync(`
+        CREATE TABLE IF NOT EXISTS maquinasAsignadas (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          usuario_id INTEGER NOT NULL,
+          maquina_id INTEGER NOT NULL,
+          FOREIGN KEY(usuario_id) REFERENCES usuarios(id),
+          FOREIGN KEY(maquina_id) REFERENCES maquinas(id)
+        );
+      `);
+
+      console.log("A lot of tables have been created successfully");
     }
-  
+
     initializeDatabase().catch(error => {
       console.error("Error initializing database: ", error);
     });
   }, []);
-  
-
-//Despues se deja este
-
-  /*seEffect(() => {
-    async function initializeDatabase() {
-      const database = await SQLite.openDatabaseAsync('indsense');
-      setDb(database);
-
-      // Verificar si la tabla usuarios existe y tiene la columna 'rol'
-      const tableInfo = await database.getAllAsync('PRAGMA table_info(usuarios)');
-      const columns = tableInfo.map(column => column.name);
-
-      if (!columns.includes('rol')) {
-        // Si la tabla no tiene la columna 'rol', agregarla
-        await database.execAsync('ALTER TABLE usuarios ADD COLUMN rol TEXT');
-      }
-
-      
-      await database.execAsync(`
-        
-        CREATE TABLE IF NOT EXISTS usuarios (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          correo TEXT NOT NULL,
-          contrasena TEXT NOT NULL,
-          rol TEXT NOT NULL
-        );
-      `);
-
-      console.log("Table created successfully");
-    }
-
-    initializeDatabase().catch(error => {
-      console.error("Error initializing database: ", error);
-    });
-  }, []);*/
 
   const Stack = createStackNavigator();
   function MyStack() {
