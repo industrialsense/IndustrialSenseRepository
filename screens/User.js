@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, Modal, Text, TextInput, Image, FlatList, Linking } from 'react-native';
-import { Button, IconButton, FAB, Checkbox, Card, Title, Avatar, Switch} from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, Modal, Text, TextInput, Image, FlatList, Linking} from 'react-native';
+import { Button, IconButton, FAB, Checkbox, Card, Title, Avatar, Switch, SegmentedButtons, List} from 'react-native-paper';
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import * as SQLite from 'expo-sqlite';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import Slider from '@react-native-community/slider';
 import bcrypt from 'react-native-bcrypt';
 import TextCarousel from './TextCarousel';
 
@@ -21,6 +22,7 @@ const HomeRoute = () => {
   const [machineData, setMachineData] = useState(null);
   const [contador, setContador] = useState(0);  // Inicializamos el contador en 0
   const [isSwitchOn, setIsSwitchOn] = useState(false);
+  const [selectedMachine, setSelectedMachine] = useState(null);
 
   useEffect(() => {
     const openDatabaseAndFetch = async () => {
@@ -234,7 +236,7 @@ const HomeRoute = () => {
 
   const renderNotificaciones = () => (
     <View style={styles.notificationModalContent}>
-      <Text style={styles.notificationModalTitle}>Tus Notificaciones</Text>
+      <Text style={styles.notificationModalTitle}>Notificaciones</Text>
       <FlatList
         data={notifications}
         keyExtractor={(item) => item.id.toString()}
@@ -264,7 +266,7 @@ const HomeRoute = () => {
         onPress={handleIpSubmit} 
         style={styles.buttonRenderMachine}
       >
-        <Text style={styles.buttonTextRenderMachine}>Agregar la Maquina</Text>
+        <Text style={styles.buttonTextRenderMachine}>Agregar Máquina</Text>
       </Button>
       {machineData && (
         <View style={styles.machineDetailsRenderMachine}>
@@ -291,16 +293,18 @@ const HomeRoute = () => {
         keyExtractor={(item) => item.ip.toString()}
         renderItem={({ item }) => (
           <View style={styles.machineItemRenderAsign}>
-            <Text style={styles.textRenderAsign}>Nombre: {item.nombre}</Text>
-            <Text style={styles.textRenderAsign}>IP: {item.ip}</Text>
-            <Text style={styles.textRenderAsign}>Descripción: {item.descripcion}</Text>
             <TouchableOpacity onPress={() => openModal('cambiar')}>
-              <Avatar.Image 
-                source={getImage(parseInt(item.imagen))} 
-                size={100} 
-                style={styles.avatarRenderAsign} 
-              />
+            <Avatar.Image
+              source={getImage(parseInt(item.imagen))}
+              size={80}
+              style={styles.avatarRenderAsign}
+            />
             </TouchableOpacity>
+            <View style={styles.infoContainer}>
+              <Text style={styles.textRenderAsign}>Nombre: {item.nombre}</Text>
+              <Text style={styles.textRenderAsign}>IP: {item.ip}</Text>
+              <Text style={styles.textRenderAsign}>Descripción: {item.descripcion}</Text>
+            </View>
           </View>
         )}
       />
@@ -311,7 +315,7 @@ const HomeRoute = () => {
   )
 
   const renderCambioMaquina = () => {
-  
+
     return (
       <FlatList
         data={assignedMachines}
@@ -324,24 +328,22 @@ const HomeRoute = () => {
               style={styles.avatarCambioMaquina} 
             />
             <Text style={styles.textLabel}>Ajustar la velocidad</Text>
-            <View style={styles.contadorContainer}>
-              <IconButton
-                icon="minus"
-                color="red"
-                size={30}
-                onPress={decrementarContador} // Disminuir la velocidad
-              />
-              <Text style={styles.contadorText}>{contador}</Text>
-              <IconButton
-                icon="plus"
-                color="green"
-                size={30}
-                onPress={incrementarContador} // Aumentar la velocidad
-              />
-            </View>
-            <Text style={styles.textLabel}>Encender/Apagar</Text>
+            <Slider
+              style={styles.slider}
+              minimumValue={0}
+              maximumValue={100}
+              step={1}
+              value={contador}
+              onValueChange={valor => setContador(valor)}
+              minimumTrackTintColor="green"
+              maximumTrackTintColor="red"
+              thumbTintColor="gray"
+            />
+            <Text style={styles.contadorText}>{contador}</Text>
+            <Text style={styles.textLabel}>Apagado / Encendido</Text>
             <Switch
               value={isSwitchOn}
+              color="black"
               onValueChange={handleSwitchChange}
               style={styles.switch}
             />
@@ -410,18 +412,17 @@ const HomeRoute = () => {
         <Text style={styles.greetingText}>Bienvenido: {userEmail} </Text>
         <Text style={styles.greetingDescription}>Aquí puedes gestionar tus máquinas y ver las últimas novedades.</Text>
       </View>
-      <ScrollView>
         <View style={styles.cardsContainerVertical}>
           <TouchableOpacity onPress={() => openModal('maquinas')}>
-            <Card style={styles.cardHorizontal}>
+            <Card style={styles.cardVertical}>
               <Card.Cover source={require('../assets/maquinas.jpg')} />
               <Card.Content>
-                <Title style={styles.cardTitle}>Agregar Maquinas</Title>
+                <Title style={styles.cardTitle}>Agregar Máquinas</Title>
               </Card.Content>
             </Card>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => openModal('peticiones')}>
-            <Card style={styles.cardHorizontal}>
+            <Card style={styles.cardVertical}>
               <Card.Cover source={require('../assets/peticiones.jpg')} />
               <Card.Content>
                 <Title style={styles.cardTitle}>Máquinas Personales</Title>
@@ -429,7 +430,6 @@ const HomeRoute = () => {
             </Card>
           </TouchableOpacity>
       </View>
-      </ScrollView>
       <Modal
         visible={modalVisible}
         transparent={true}
@@ -482,7 +482,7 @@ const MachinesRoute = () => {
 
   return (
     <View style={styles.containerSolicitudMaquina}>
-      <Text style={styles.titleSolicitudMaquina}>Solicita una máquina:</Text>
+      <Text style={styles.titleSolicitudMaquina}>Solicitar una máquina:</Text>
       <TextInput
         style={styles.inputSolicitudMaquina}
         placeholder="Escribe tu mensaje de solicitud"
@@ -512,12 +512,10 @@ const HelpRoute = () => {
 
   const socialLinks = [
     { name: 'Facebook', icon: 'facebook', url: 'https://facebook.com'},
-    { name: 'Twitter', icon: 'twitter', url: 'https://twitter.com' },
-    { name: 'Instagram', icon: 'instagram', url: 'https://instagram.com' },
-    { name: 'Reddit', icon: 'reddit', url: 'https://reddit.com' },
-    { name: 'Twitch', icon: 'twitch', url: 'https://twitch.com' },
-    { name: 'Teams', icon: 'microsoft-teams', url: 'https://teams.microsoft.com' },
-    { name: 'Gmail', icon: 'gmail', url: 'https://mail.google.com' }
+    { name: 'Twitter', icon: 'twitter', url: 'https://twitter.com'},
+    { name: 'Instagram', icon: 'instagram', url: 'https://instagram.com'},
+    { name: 'WhatsApp', icon: 'whatsapp', url: 'https://web.whatsapp.com/'},
+    { name: 'Gmail', icon: 'gmail', url: 'https://mail.google.com'}
     // Agrega más redes sociales según sea necesario
   ];
 
@@ -563,7 +561,7 @@ const SettingsRoute = () => {
   const settingsOptions = [
     { title: 'Privacidad', icon: 'shield-lock-outline' },
     { title: 'Políticas', icon: 'file-document-outline' },
-    { title: 'Accesibilidad', icon: 'accessibility' },
+    { title: 'Accesibilidad', icon: 'human' },
     { title: 'Calificación', icon: 'star-outline' },
   ];
 
@@ -649,11 +647,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
   },
   avatarCambioMaquina: {
     marginBottom: 20,
@@ -677,11 +670,12 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   closeButton: {
-    marginTop: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#007bff',
-    borderRadius: 5,
+    backgroundColor: '#FF5C5C', // Rojo para el botón de cerrar
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 10,
+    width: '70%',
   },
   closeButtonText: {
     color: '#fff',
@@ -690,7 +684,6 @@ const styles = StyleSheet.create({
   containerSolicitudMaquina: {
     flex: 1,
     backgroundColor: '#FAFAFA', // Fondo claro para un aspecto limpio y moderno
-    padding: 20,
     justifyContent: 'center', // Centrar el contenido verticalmente
   },
   titleSolicitudMaquina: {
@@ -698,30 +691,35 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 20,
+    paddingHorizontal: 20,
   },
   inputSolicitudMaquina: {
-    width: '100%',
+    width: '90%',
+    left: 20,
     padding: 12,
     marginVertical: 15,
     backgroundColor: '#FFF',
     borderRadius: 8,
     borderColor: '#CCC',
     borderWidth: 1,
+    paddingHorizontal: 20,
   },
   buttonSolicitudMaquina: {
-    backgroundColor: '#28A745', // Verde para indicar acción positiva
+    backgroundColor: '#FFA500', // Verde para indicar acción positiva
     borderRadius: 10,
-    paddingVertical: 14,
+    paddingVertical: 10,
     alignItems: 'center',
     marginTop: 10,
+    width: '40%',
+    left: 130,
   },
   buttonTextSolicitudMaquina: {
-    color: '#FFF',
-    fontSize: 18,
+    color: '#fff',
+    fontSize: 15,
     fontWeight: 'bold',
   },
   containerRenderMachine: {
-    backgroundColor: '#F5F5F5', // Fondo claro para contraste
+    backgroundColor: '#FFF', // Fondo claro para contraste
     padding: 20,
     width: '90%',
   },
@@ -730,6 +728,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 20,
+    left: 15,
   },
   inputRenderMachine: {
     width: '100%',
@@ -741,16 +740,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   buttonRenderMachine: {
-    backgroundColor: '#007BFF', // Azul vibrante para un botón llamativo
+    backgroundColor: '#FFA500', 
     borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 5,
     alignItems: 'center',
     marginTop: 10,
+    width: '70%',
+    left: 45,
   },
   buttonTextRenderMachine: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
   machineDetailsRenderMachine: {
@@ -774,55 +774,63 @@ const styles = StyleSheet.create({
     borderRadius: 50, // Hacer la imagen del avatar circular
   },
   closeButtonRenderMachine: {
-    marginTop: 20,
     backgroundColor: '#FF5C5C', // Rojo para el botón de cerrar
     borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 14,
     alignItems: 'center',
+    marginTop: 10,
+    width: '70%',
+    left: 45,
   },
   closeButtonTextRenderMachine: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
   containerRenderAsign: {
-    backgroundColor: '#F8F8F8', // Fondo claro para un look limpio
+    backgroundColor: '#FFF', // Fondo claro para un look limpio
     padding: 20,
     width: '90%',
+    alignSelf: 'center',
+    borderRadius: 10,
   },
   machineItemRenderAsign: {
-    marginBottom: 20,
-    padding: 15,
-    backgroundColor: '#E0E0E0', // Fondo gris claro para destacar cada ítem
-    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    padding: 10,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 8,
     shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
   },
   textRenderAsign: {
-    fontSize: 18,
+    fontSize: 11,
     color: '#333',
-    marginBottom: 5,
+    marginBottom: 3,
   },
   avatarRenderAsign: {
-    marginTop: 10,
-    alignSelf: 'center',
-    borderRadius: 50, // Hacer la imagen del avatar circular
+    marginRight: 15,
+    backgroundColor: '#E0E0E0',
   },
   closeButtonRenderAsign: {
-    marginTop: 20,
     backgroundColor: '#FF5C5C', // Rojo para el botón de cerrar
-    borderRadius: 10,
+    borderRadius: 8,
     paddingVertical: 12,
-    paddingHorizontal: 20,
     alignItems: 'center',
+    marginTop: 10,
+    alignSelf: 'center',
+    width: '50%',
   },
   closeButtonTextRenderAsign: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  infoContainer: {
+    flex: 1,
   },
   notificationModalContainer: {
     flex: 1,
@@ -831,42 +839,36 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fondo semi-transparente
   },
   notificationModalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF',
     padding: 20,
+    width: '90%',
     borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    width: '90%', // Ancho del contenido modal
-    maxWidth: 600, // Ancho máximo recomendado
   },
   notificationModalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+    left: 75,
   },
   notificationItem: {
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
-    width: '100%',
+    alignItems: 'center',
   },
   notificationText: {
     fontSize: 16,
     color: '#000',
   },
   notificationCloseButton: {
-    marginTop: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#007BFF',
-    borderRadius: 5,
+    backgroundColor: '#FF5C5C', // Rojo para el botón de cerrar
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 10,
+    width: '70%',
+    left: 45,
+    marginTop: 20, 
   },
   notificationCloseButtonText: {
     color: '#fff',

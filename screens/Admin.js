@@ -199,7 +199,7 @@ const HomeRoute = () => {
             onChangeText={setSearchQuery}
           />
           {content}
-          <TouchableOpacity onPress={closeModal}>
+          <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
             <Text>Cerrar</Text>
           </TouchableOpacity>
         </View>
@@ -225,25 +225,26 @@ const HomeRoute = () => {
         renderItem={({ item }) => (
           <View style={styles.tableRow}>
             <View style={styles.tableCell}>
-              <Text style={styles.cellTitle}>ID:</Text>
-              <Text>{item.id}</Text>
+            <Text style={styles.cellTitle}>ID:</Text>
+              <Text numberOfLines={1} ellipsizeMode="tail">
+                {item.id}
+              </Text>
             </View>
             <View style={styles.tableCell}>
-              <Text style={styles.cellTitle}>Correo:</Text>
-              <Text>{item.correo}</Text>
+            <Text style={styles.cellTitle}>Correo:</Text>
+              <Text numberOfLines={1} ellipsizeMode="tail">
+                {item.correo}
+              </Text>
             </View>
             <View style={styles.tableCell}>
-            <Text style={styles.cellTitle}>Acciones:</Text>
-                <View style={styles.tableCell}>
-                  <TouchableOpacity onPress={() => handleEditUser(item)}>
-                    <Icon name="pencil" size={20} color="#000" />
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.tableCell}>
-                  <TouchableOpacity onPress={() => handleDeleteUser(item)}>
-                    <Icon name="delete" size={20} color="#FF0000" />
-                  </TouchableOpacity>
-                </View>
+              <TouchableOpacity onPress={() => handleEditUser(item)}>
+                <Icon name="pencil" size={20} color="#000" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.tableCell}>
+              <TouchableOpacity onPress={() => handleDeleteUser(item)}>
+                <Icon name="delete" size={20} color="#FF0000" />
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -320,30 +321,41 @@ const HomeRoute = () => {
   {/*Cambiar estilo aqui*/}
   const renderEditUserModal = () => (
     <Modal visible={isEditUserModalVisible} onRequestClose={() => setIsEditUserModalVisible(false)}>
-      <View style={styles.modalContainer}> 
-        <Text style={styles.modalTitle}>Editar Usuario</Text>
+      <View style={styles.modalView}>
+        <Text style={styles.modalText}>Editar Usuario</Text>
         <TextInput
-          style={styles.inputModal}
+          style={styles.input}
           placeholder="Correo"
           value={editUserCorreo}
           onChangeText={setEditUserCorreo}
+          editable={false}
         />
         <TextInput
-          style={styles.inputModal}
-          placeholder="Contraseña"
+          style={styles.input}
+          placeholder="Nueva Contraseña"
           value={editUserContrasena}
           secureTextEntry
           onChangeText={setEditUserContrasena}
         />
-        <Button style={styles.buttonModal} mode="contained" onPress={saveEditedUser}>
-          Guardar Cambios
-        </Button>
-        <Button style={styles.buttonModalClose} mode="outlined" onPress={() => setIsEditUserModalVisible(false) || setModalVisible(false)}>
-          Cancelar
-        </Button>
-      </View>
-    </Modal>
+        {!isEditPasswordValid && (
+            <Text style={styles.errorText}>
+              La contraseña debe contener al menos una letra mayúscula, una letra minúscula, un número y un carácter especial y debe tener una longitud minima de 8 caracteres 
+            </Text>
+          )}
+          <View style={styles.checkboxContainer}>
+          </View>
+          <View style={styles.buttonContainer}>
+            <Button mode="contained" onPress={saveEditedUser}style={[styles.modalButton, { backgroundColor: '#FFA500' }]}>
+              Guardar
+            </Button>
+            <Button mode="outlined" onPress={() => setIsEditUserModalVisible(false) || setModalVisible(false)} style={[styles.modalButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }}>
+              Cancelar
+            </Button>
+          </View>
+          </View>
+        </Modal>
   );
+
 
   const renderPetciones = () => {
     const dataToShow = filteredSolicitudes;
@@ -364,15 +376,21 @@ const HomeRoute = () => {
           <View style={styles.tableRow}>
             <View style={styles.tableCell}>
               <Text style={styles.cellTitle}>Solicitud:</Text>
-              <Text>{item.id}</Text>
+              <Text numberOfLines={1} ellipsizeMode="tail">
+              {item.id}
+              </Text>
             </View>
             <View style={styles.tableCell}>
-              <Text style={styles.cellTitle}>ID del Usuario:</Text>
-              <Text>{item.usuario_id}</Text>
+              <Text style={styles.cellTitle}>ID Usuario:</Text>
+              <Text numberOfLines={1} ellipsizeMode="tail">
+              {item.usuario_id}
+              </Text>
             </View>
             <View style={styles.tableCell}>
               <Text style={styles.cellTitle}>Mensaje:</Text>
-              <Text>{item.mensaje}</Text>
+              <Text numberOfLines={1} ellipsizeMode="tail">
+              {item.mensaje}
+              </Text>
             </View>
             <View style={styles.tableCell}>
               <TouchableOpacity onPress={() => handleRechazarSolicitud(item)}>
@@ -441,22 +459,30 @@ const HomeRoute = () => {
           <View style={styles.tableRow}>
             <View style={styles.tableCell}>
               <Text style={styles.cellTitle}>ID:</Text>
-              <Text>{item.id}</Text>
+              <Text numberOfLines={1} ellipsizeMode="tail">
+                {item.id}
+              </Text>
             </View>
             <View style={styles.tableCell}>
               <Text style={styles.cellTitle}>Nombre:</Text>
-              <Text>{item.nombre}</Text>
+              <Text numberOfLines={1} ellipsizeMode="tail">
+                {item.nombre}
+              </Text>
             </View>
             <View style={styles.tableCell}>
               <Text style={styles.cellTitle}>IP:</Text>
-              <Text>{item.ip}</Text>
+              <Text numberOfLines={1} ellipsizeMode="tail">
+                {item.ip}
+              </Text>
             </View>
             <View style={styles.tableCell}>
               <Text style={styles.cellTitle}>Puerto:</Text>
-              <Text>{item.puerto}</Text>
+              <Text numberOfLines={1} ellipsizeMode="tail">
+                {item.puerto}
+              </Text>
             </View>
             <View style={styles.tableCell}>
-              <TouchableOpacity onPress={() => handleEditMachine(item)}>
+            <TouchableOpacity onPress={() => handleEditMachine(item)}>
                 <Icon name="pencil" size={20} color="#000" />
               </TouchableOpacity>
             </View>
@@ -474,6 +500,7 @@ const HomeRoute = () => {
       />
     );
   };
+
 
   const handleEditMachine = (machine) => {
     setEditingMachine(machine);
@@ -553,32 +580,34 @@ const saveEditedMachine = async () => {
   {/*Cambiar estilo aqui*/}
   const renderEditMachineModal = () => (
     <Modal visible={isEditMachineModalVisible} onRequestClose={() => setIsEditMachineModalVisible(false)}>
-      <View style={styles.modalContainer}> 
-        <Text style={styles.modalTitle}>Editar Máquina</Text>
+      <View style={styles.modalView}>
+        <Text style={styles.modalText}>Editar Máquina</Text>
         <TextInput
-          style={styles.inputModal}
+          style={styles.input}
           placeholder="Nombre"
           value={newMachineName}
           onChangeText={setNewMachineName}
         />
         <TextInput
-          style={styles.inputModal}
+          style={styles.input}
           placeholder="IP"
           value={newMachineIP}
           onChangeText={setNewMachineIP}
         />
         <TextInput
-          style={styles.inputModal}
-          placeholder="Puerto"
+          style={styles.input}
+          placeholder="Nuevo Puerto"
           value={newMachinePuerto}
           onChangeText={setNewMachinePuerto}
         />
-        <Button style={styles.buttonModal} mode="contained" onPress={saveEditedMachine}>
-          Guardar Cambios
+        <View style={styles.buttonContainer}>
+        <Button mode="contained" onPress={saveEditedMachine}style={[styles.modalButton, { backgroundColor: '#FFA500' }]}>
+          Guardar
         </Button>
-        <Button style={styles.buttonModalClose}  mode="outlined" onPress={() => setIsEditMachineModalVisible(false) || setModalVisible(false)}>
+        <Button mode="outlined" onPress={() => setIsEditMachineModalVisible(false) || setModalVisible(false)} style={[styles.modalButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }}>
           Cancelar
         </Button>
+      </View>
       </View>
     </Modal>
   );
@@ -641,7 +670,7 @@ const saveEditedMachine = async () => {
           </View> 
       <View style={styles.cardsContainerVertical}>
             <TouchableOpacity style={styles.cardTouchable} onPress={() => openModal('maquinaria')}>
-              <Card style={styles.cardHorizontal}>
+              <Card style={styles.cardVertical}>
                 <Card.Cover source={require('../assets/maquinas.jpg')} />
                 <Card.Content>
                   <Title style={styles.cardTitle}>Máquinas</Title>
@@ -651,7 +680,7 @@ const saveEditedMachine = async () => {
           </View>
       <View style={styles.cardsContainerVertical}>
             <TouchableOpacity style={styles.cardTouchable} onPress={() => openModal('solicitudes')}>
-              <Card style={styles.cardHorizontal}>
+              <Card style={styles.cardVertical}>
                 <Card.Cover source={require('../assets/peticiones.jpg')} />
                 <Card.Content>
                   <Title style={styles.cardTitle}>Solicitudes</Title>
@@ -1232,8 +1261,7 @@ const MachinesRoute = () => {
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Agregar Dispositivo</Text>
-          <ScrollView>
+          <Text style={styles.modalText}>Agregar Dispositivo</Text>
             <TextInput
               style={styles.input}
               placeholder="Nombre de la Máquina"
@@ -1261,26 +1289,24 @@ const MachinesRoute = () => {
             <Text style={styles.inputLabel}>Selecciona una imagen:</Text>
             <View style={styles.imageContainer}>
               <TouchableOpacity onPress={() => selectImage(1)}>
-                <Image source={require('../assets/device1.jpg')} style={styles.image} />
+                <Image source={require('../assets/device1.jpg')} style={styles.imageItem} />
                 {imagen === 1 && <Text style={styles.selectedText}>Seleccionado</Text>}
               </TouchableOpacity>
               <TouchableOpacity onPress={() => selectImage(2)}>
-                <Image source={require('../assets/device2.jpg')} style={styles.image} />
+                <Image source={require('../assets/device2.jpg')} style={styles.imageItem} />
                 {imagen === 2 && <Text style={styles.selectedText}>Seleccionado</Text>}
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.button} onPress={handleAdd}>
-              <Text style={styles.buttonText}>Agregar</Text>
-            </TouchableOpacity>
-          </ScrollView>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={closeModal}
-          >
-            <Text style={styles.closeButtonText}>Cerrar</Text>
-          </TouchableOpacity>
+            <View style={styles.buttonContainer}>
+              <Button mode= 'contained' onPress={handleAdd} style={[styles.modalButton, { backgroundColor: '#FFA500' }]}>
+                Agregar
+              </Button>
+              <Button mode= 'outlined' onPress={closeModal}style={[styles.modalButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }}>
+              Cerrar
+              </Button>
+            </View>
+          </View>
         </View>
-      </View>
     </Modal>
   );
 
@@ -1291,17 +1317,26 @@ const MachinesRoute = () => {
       <View style={styles.topSection}>
         <Text style={styles.pixelArtText}>Dispositivos agregados: {deviceCount}</Text>
       </View>
-      <Text style={styles.subHeaderText}>Últimos Dispositivos Agregados:</Text>
+      <Text style={styles.subHeaderText}>Último Dispositivo Agregado:</Text>
       {lastMachine && (
         <View style={styles.cardYu}>
-          <Avatar.Image source={getImage(parseInt(lastMachine.imagen))} size={100} style={styles.avatar} />
-          <Text style={styles.machineName}>{lastMachine.nombre}</Text>
-          <Text style={styles.machineDescription}>{lastMachine.descripcion}</Text>
+          <View style={styles.imageContainer}>
+            <Avatar.Image source={getImage(parseInt(lastMachine.imagen))} size={100} style={styles.avatar} />
+          </View>
+          <View style={styles.infoContainer}>
+            <Text style={styles.machineDescription}> ID: {lastMachine.id}</Text>
+            <Text style={styles.machineDescription}> Nombre: {lastMachine.nombre}</Text>
+            <Text style={styles.machineDescription}> IP: {lastMachine.ip}</Text>
+            <Text style={styles.machineDescription}> Descripción: {lastMachine.descripcion}</Text>
+        </View>
         </View>
       )}
-      <TouchableOpacity onPress={openModal} style={styles.uploadButtonContainer}>
-        <IconButton icon="upload" size={50} color="violet" style={styles.uploadButton} />
-      </TouchableOpacity>
+      <FAB
+        style={styles.fabUpload}
+        icon="upload"
+        color="white"
+        onPress={openModal}
+      />
       {renderModalContent()}
     </View>
   );
@@ -1419,13 +1454,13 @@ const RequestRoute = () => {
         value={selectedSegment}
         onValueChange={setSelectedSegment}
         buttons={[
-          { value: 'solicitudes', label: 'Solicitudes' },
-          { value: 'aprobadas', label: 'Solicitudes Aprobadas' },
+          { value: 'solicitudes', label: 'Pendientes' },
+          { value: 'aprobadas', label: 'Aprobadas' },
         ]}
       />
       {selectedSegment === 'solicitudes' ? (
         <SafeAreaView style={{ flex: 1 }}>
-          <Text style={styles.textRequest}>Solicitudes de Máquinas</Text>
+          <Text style={styles.textRequest}>Solicitudes de Máquinas: </Text>
           <FlatList
             data={requests}
             keyExtractor={(item) => item.id.toString()}
@@ -1446,7 +1481,7 @@ const RequestRoute = () => {
           />
           {selectedRequest && (
             <View style={styles.textContainerRequest}>
-              <Text style={styles.textRequest}>Asignar IP a solicitud {selectedRequest.id}</Text>
+              <Text style={styles.textRequest}>Asignar IP a solicitud N° {selectedRequest.id}</Text>
               <Picker
                 selectedValue={selectedMachineIP}
                 onValueChange={(itemValue) => setSelectedMachineIP(itemValue)}
@@ -1469,7 +1504,7 @@ const RequestRoute = () => {
         </SafeAreaView>
       ) : (
         <SafeAreaView style={{ flex: 1 }}>
-          <Text style={styles.textRequest}>Solicitudes Aprobadas</Text>
+          <Text style={styles.textRequest}>Solicitudes Aprobadas: </Text>
           <FlatList
             data={approvedRequests}
             keyExtractor={(item) => item.id.toString()}
@@ -1492,7 +1527,7 @@ const SettingsRoute = () => {
   const settingsOptions = [
     { title: 'Privacidad', icon: 'shield-lock-outline' },
     { title: 'Políticas', icon: 'file-document-outline' },
-    { title: 'Accesibilidad', icon: 'accessibility' },
+    { title: 'Accesibilidad', icon: 'human' },
     { title: 'Calificación', icon: 'star-outline' },
   ];
 
@@ -1605,25 +1640,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'black', // Texto en blanco para buen contraste
     marginBottom: 5,
+    padding: 3,
   },
   buttonRequest: {
-    backgroundColor: '#4B0082', 
+    backgroundColor: '#A891D2', 
     borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 5,
     alignItems: 'center',
     marginTop: 10,
+    width: '70%',
+    left: 50,
   },
   buttonTextRequest: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+    paddingHorizontal: 20,
   },
   pickerRequest: {
-    backgroundColor: '#292929',
-    borderRadius: 10,
-    marginTop: 15,
-    color: '#FFF', // Texto en blanco dentro del picker
+    backgroundColor: 'papayawhip',
+    color: 'black',
   },
   approvedRequestItem: {
     backgroundColor: 'papayawhip', // Un gris oscuro para distinguir de los no aprobados
@@ -1667,6 +1703,9 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  closeButton: {
+    marginTop: 20, // Ajusta este valor según cuánto espacio quieras entre el contenido y el botón
   },
   navText: {
     textAlign: "center",
@@ -1730,20 +1769,24 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   pixelArtText: {
-    fontSize: 20,
+    fontSize: 17,
     color: 'black',
-    backgroundColor: 'pink',
-    borderWidth: 2,
-    borderColor: 'black',
-    padding: 5,
+    backgroundColor: '#CEBAF2',
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 40,
+    right: 50,
+    top: 10,
+    paddingHorizontal: 40,
   },
   subHeaderText: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
+    marginBottom: 20,
+    left: 15,
   },
   cardYu: {
+    flexDirection: 'row',
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 10,
@@ -1752,23 +1795,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatar: {
-    marginBottom: 10,
+    borderRadius: 50,
   },
-  machineName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
+  infoContainer: {
+    flex: 1,
+    padding: 15,
   },
   machineDescription: {
     fontSize: 14,
     color: '#555',
+    marginBottom: 5,
   },
   uploadButtonContainer: {
     alignItems: 'center',
     marginTop: 'auto',
   },
   uploadButton: {
-    backgroundColor: 'violet',
+    position: 'absolute',
+    margin: 0,
+    right: 5,
+    bottom: 0,
+    backgroundColor: '#4B0082',
     borderRadius: 25,
   },
   cardVertical: {
@@ -1779,7 +1826,7 @@ const styles = StyleSheet.create({
   cardHorizontal: {
     marginBottom: 20,
     width: '100%',
-    height: 230,
+    height: 200,
   },
   cardTitle: {
     fontSize: 16, // Reducir el tamaño del título
@@ -1854,8 +1901,8 @@ const styles = StyleSheet.create({
   containerT: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingHorizontal: 10,
-    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingTop: 15,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -1887,7 +1934,13 @@ const styles = StyleSheet.create({
     right: 20,
     bottom: 0,
     backgroundColor: '#4B0082',
-    
+  },
+  fabUpload: {
+    position: 'absolute',
+    margin: 0,
+    right: 25,
+    top: 30,
+    backgroundColor: '#4B0082',
   },
   modalView: {
     flex: 1,
@@ -1960,6 +2013,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginVertical: 16,
+    paddingHorizontal: 15,
   },
   errorText: {
     color: 'red',
@@ -2069,5 +2123,14 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: '#FF6F61',
+  },
+  imageItem: {
+    width: 100,
+    height: 100,
+    borderRadius: 5,
+    marginLeft: 30,
+  },
+  selectedText: {
+    marginLeft: 35,
   },
 });
