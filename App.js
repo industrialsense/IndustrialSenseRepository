@@ -92,6 +92,18 @@ export default function App() {
     );
     `);
 
+      await db.runAsync('DROP TABLE IF EXISTS usuarios');
+      await db.runAsync(`
+      CREATE TABLE usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        apellido TEXT NOT NULL,
+        correo TEXT NOT NULL,
+        contrasena TEXT NOT NULL,
+        rol TEXT NOT NULL
+      );
+`);
+
       console.log("A lot of tables have been created successfully");
     }
 

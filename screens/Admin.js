@@ -1535,6 +1535,36 @@ const RequestRoute = () => {
 };
 
 const SettingsRoute = () => {
+
+  const [db, setDb] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [usuarios, setUsuarios] = useState([]);
+
+  useEffect(() => {
+    const openDatabaseAndFetch = async () => {
+      const database = await SQLite.openDatabaseAsync('indsense');
+      setDb(database);
+      
+    };
+    openDatabaseAndFetch();
+  }, []);
+
+  useEffect(() => {
+    if (db) {
+      fetchUsuarios(db);
+    }
+  }, [db]);
+
+  const fetchUsuarios = async (database) => {
+    try {
+      const data = await database.getAllAsync('SELECT * FROM usuarios WHERE rol IN (?)', ['admin']);
+      setUsuarios(data);
+    } catch (error) {
+      console.error("Error al obtener usuarios: ", error);
+    }
+  };
+
   const settingsOptions = [
     { title: 'Mi perfil', icon: 'human' },
     { title: 'Privacidad', icon: 'shield-lock-outline' },
@@ -1542,6 +1572,76 @@ const SettingsRoute = () => {
     { title: 'Calificación', icon: 'star-outline' },
   ];
 
+  const handlePress = (option) => {
+    setSelectedOption(option);
+    setModalVisible(true);
+  };
+
+  const renderModalContent = () => {
+    switch (selectedOption) {
+      case 'Mi perfil':
+        return (
+          <View>
+            <Text style={styles.modalTitleSettingsRoute}>Mi Perfil</Text>
+            {usuarios.length > 0 ? (
+              <>
+                <View style={styles.profileItem}>
+                <Text style={styles.profileLabel}>Nombre:</Text>
+                <Text style={styles.profileValue}>{usuarios[0].nombre}</Text>
+              </View>
+              <View style={styles.profileItem}>
+                <Text style={styles.profileLabel}>Apellido:</Text>
+                <Text style={styles.profileValue}>{usuarios[0].apellido}</Text>
+              </View>
+              <View style={styles.profileItem}>
+                <Text style={styles.profileLabel}>Correo:</Text>
+                <Text style={styles.profileValue}>{usuarios[0].correo}</Text>
+              </View>
+              <View style={styles.profileItem}>
+                <Text style={styles.profileLabel}>Rol:</Text>
+                <Text style={styles.profileValue}>{usuarios[0].rol}</Text>
+              </View>
+                <View style={styles.buttonContainerSettings}>
+                <Button mode="outlined" style={[styles.modalButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }} onPress={() => setModalVisible(false)}> Cerrar </Button>
+                </View>
+              </>
+            ) : (
+              <Text>Cargando...</Text>
+              
+            )}
+          </View>
+        );
+      case 'Privacidad':
+        return (
+          <View>
+            <Text style={styles.modalTitleSettingsRoute}>Privacidad</Text>
+            <Text style={styles.modalText}>
+              Tu privacidad es importante para nosotros. Nos comprometemos a proteger tu información personal y garantizar que sea utilizada de manera segura.
+            </Text>
+            <View style={styles.buttonContainer}>
+            <Button mode="contained" style={[styles.modalButton, { backgroundColor: '#FFA500' }]} labelStyle={{ color: 'white' }} onPress={() => setModalVisible(false)}> Aceptar </Button>
+            <Button mode="outlined" style={[styles.modalButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }} onPress={() => setModalVisible(false)}> Cerrar </Button>
+            </View>
+          </View>
+        );
+      case 'Políticas':
+        return (
+          <View>
+            <Text style={styles.modalTitleSettingsRoute}>Políticas</Text>
+            <Text style={styles.modalText}>
+              Nuestras políticas están diseñadas para proporcionar un entorno seguro y confiable para todos los usuarios. Cumplimos con todas las regulaciones aplicables y nos esforzamos por mantener la transparencia en nuestras operaciones.
+            </Text>
+            <View style={styles.buttonContainer}>
+            <Button mode="contained" style={[styles.modalButton, { backgroundColor: '#FFA500' }]} labelStyle={{ color: 'white' }} onPress={() => setModalVisible(false)}> Aceptar </Button>
+            <Button mode="outlined" style={[styles.modalButton, { backgroundColor: '#8B0000' }]} labelStyle={{ color: 'white' }} onPress={() => setModalVisible(false)}> Cerrar </Button>
+            </View>
+          </View>
+        );
+      default:
+        return null;
+    }
+  };
+  
   return (
     <View style={styles.settingsContainer}>
       <View style={styles.header}>
@@ -1554,18 +1654,30 @@ const SettingsRoute = () => {
         data={settingsOptions}
         keyExtractor={(item) => item.title}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.optionContainer}>
+          <TouchableOpacity style={styles.optionContainerSettingsRoute} onPress={() => handlePress(item.title)}>
             <IconButton
               icon={item.icon}
               size={30}
               color="#003366"
             />
-            <Text style={styles.optionText}>{item.title}</Text>
+            <Text style={styles.optionTextSettingsRoute}>{item.title}</Text>
           </TouchableOpacity>
         )}
       />
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainerSettingsRoute}>
+          <View style={styles.modalContentSettingsRoute}>
+            {renderModalContent()}
+          </View>
+        </View>
+      </Modal>
     </View>
-  );
+  );  
 };
 
 export default function App() {
@@ -2157,5 +2269,58 @@ const styles = StyleSheet.create({
   },
   selectedText: {
     marginLeft: 35,
+  },
+  modalTitleSettingsRoute: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  profileItem: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  profileLabel: {
+    fontWeight: 'bold',
+    marginRight: 10,
+  },
+  profileValue: {
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+  modalText: {
+    textAlign: 'justify',
+    fontSize: 11,
+  },  
+  buttonContainerSettings: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
+    marginTop: 20,
+  },
+  modalButton: {
+    minWidth: 100,
+  },
+  optionContainerSettingsRoute: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  optionTextSettingsRoute: {
+    marginLeft: 10,
+    fontSize: 18,
+  },
+  modalContainerSettingsRoute: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContentSettingsRoute: {
+    width: 300,
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
   },
 });
