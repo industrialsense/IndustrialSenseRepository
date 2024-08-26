@@ -19,10 +19,11 @@ export default function App() {
     async function initializeDatabase() {
       const database = await SQLite.openDatabaseAsync('indsense');
       setDb(database);
-
       await database.execAsync(`
         CREATE TABLE IF NOT EXISTS usuarios (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nombre TEXT NOT NULL,
+          apellido TEXT NOT NULL,
           correo TEXT NOT NULL,
           contrasena TEXT NOT NULL,
           rol TEXT NOT NULL
@@ -43,7 +44,6 @@ export default function App() {
             FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
           );
       `);
-
       await database.execAsync(`
         CREATE TABLE IF NOT EXISTS solicitudes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,6 +82,15 @@ export default function App() {
           FOREIGN KEY(maquina_id) REFERENCES maquinas(id)
         );
       `);
+      await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS password_resets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token TEXT NOT NULL,
+        expiry_date DATETIME NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES usuarios(id)
+    );
+    `);
 
       console.log("A lot of tables have been created successfully");
     }

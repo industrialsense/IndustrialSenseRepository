@@ -5,13 +5,14 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import * as SQLite from 'expo-sqlite';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
-import bcrypt from 'react-native-bcrypt';
 import TextCarousel from './TextCarousel';
+import bcrypt from 'react-native-bcrypt';
+
 
 const HomeRoute = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { userEmail, userID } = route.params;
+  const { userNombre, userID } = route.params;
   const [db, setDb] = useState(null);
   const [selectedSegment, setSelectedSegment] = useState('usuarios');
   const [modalVisible, setModalVisible] = useState(false);
@@ -409,9 +410,10 @@ const HomeRoute = () => {
         </View>
       </View>
       <View style={styles.greetingContainer}>
-        <Text style={styles.greetingText}>Bienvenido: {userEmail} </Text>
+        <Text style={styles.greetingText}>Bienvenido: {userNombre} </Text>
         <Text style={styles.greetingDescription}>Aquí puedes gestionar tus máquinas y ver las últimas novedades.</Text>
       </View>
+      <ScrollView>
         <View style={styles.cardsContainerVertical}>
           <TouchableOpacity onPress={() => openModal('maquinas')}>
             <Card style={styles.cardVertical}>
@@ -430,6 +432,7 @@ const HomeRoute = () => {
             </Card>
           </TouchableOpacity>
       </View>
+      </ScrollView>
       <Modal
         visible={modalVisible}
         transparent={true}
@@ -444,7 +447,7 @@ const HomeRoute = () => {
 
 const MachinesRoute = () => {
   const route = useRoute();
-  const { userEmail, userID } = route.params;
+  const {userID } = route.params;
   const [db, setDb] = useState(null);
   const [message, setMessage] = useState('');
   
@@ -559,9 +562,9 @@ const HelpRoute = () => {
 
 const SettingsRoute = () => {
   const settingsOptions = [
+    { title: 'Mi perfil', icon: 'human' },
     { title: 'Privacidad', icon: 'shield-lock-outline' },
     { title: 'Políticas', icon: 'file-document-outline' },
-    { title: 'Accesibilidad', icon: 'human' },
     { title: 'Calificación', icon: 'star-outline' },
   ];
 
@@ -998,7 +1001,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     paddingHorizontal: 20, 
     paddingTop: 20,
-    marginBottom: 265,
   },
   cardVertical: {
     marginBottom: 33,

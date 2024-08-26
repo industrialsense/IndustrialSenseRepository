@@ -3,19 +3,24 @@ import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, Modal, Text, Tex
 import { Button, Searchbar, DataTable, IconButton, FAB, Checkbox, SegmentedButtons, Card, Title, Avatar} from 'react-native-paper';
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import * as SQLite from 'expo-sqlite';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute} from '@react-navigation/native';
 import {Picker} from '@react-native-picker/picker';
 import bcrypt from 'react-native-bcrypt';
+
 
 const HomeRoute = () => {
   const [db, setDb] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
   const [selectedSegment, setSelectedSegment] = useState('usuarios');
+  const route = useRoute();
+  const { userNombre, userID } = route.params;
   const [requests, setRequests] = useState([]);
   const [modalVisible, setModalVisible] = useState(false); // Estado del modal
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [editUserId, setEditUserId] = useState(null);
+  const [editUserNombre, setEditUserNombre] = useState('');
+  const [editUserApellido, setEditUserApellido] = useState('');
   const [editUserCorreo, setEditUserCorreo] = useState('');
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isEditPasswordValid, setIsEditPasswordValid] = useState(false);
@@ -38,7 +43,7 @@ const HomeRoute = () => {
     const openDatabaseAndFetch = async () => {
       const database = await SQLite.openDatabaseAsync('indsense');
       setDb(database);
-      await createInitialUsers(database);
+      
     };
     openDatabaseAndFetch();
   }, []);
@@ -99,7 +104,7 @@ const HomeRoute = () => {
   const fetchRequests = async (database) => {
     try {
       const data = await database.getAllAsync(
-        'SELECT solicitudes.id, solicitudes.mensaje, solicitudes.usuario_id, usuarios.correo FROM solicitudes JOIN usuarios ON solicitudes.usuario_id = usuarios.id'
+        'SELECT solicitudes.id, solicitudes.mensaje, solicitudes.usuario_id, usuarios.nombre, usuarios.apellido, usuarios.correo FROM solicitudes JOIN usuarios ON solicitudes.usuario_id = usuarios.id'
       );
       setRequests(data);
     } catch (error) {
@@ -134,31 +139,6 @@ const HomeRoute = () => {
     }
   };
 
-  const createInitialUsers = async (database) => {
-    const users = [
-      { id: 1, correo: 'spadmsenseindustrial@gmail.com', contrasena: '1Q2w3e4r5T', rol: 'superadmin' },
-      { id: 2, correo: 'admsenseindustrial@gmail.com', contrasena: '2W3e4r5t6Y', rol: 'admin' },
-      { id: 3, correo: 'crissg030800@gmail.com', contrasena: '3E4r5t6y7U', rol: 'usuario' }
-    ];
-
-    for (const user of users) {
-      try {
-        const existingUser = await database.getFirstAsync('SELECT * FROM usuarios WHERE correo = ?', [user.correo]);
-        if (existingUser) {
-          continue;
-        }
-
-        await database.runAsync(
-          'INSERT INTO usuarios (id, correo, contrasena, rol) VALUES (?, ?, ?, ?)',
-          [user.id, user.correo, user.contrasena, user.rol]
-        );
-      } catch (error) {
-        console.error("Error al crear usuario inicial: ", error);
-      }
-    }
-
-    fetchUsuarios(database);
-  };
 
   const openModal = (segment) => {
     setSelectedSegment (segment);
@@ -258,6 +238,8 @@ const HomeRoute = () => {
 
   const handleEditUser = (user) => {
     setEditUserId(user.id);
+    setEditUserNombre(user.nombre);
+    setEditUserApellido(user.apellido);
     setEditUserCorreo(user.correo);
     setEditUserContrasena(''); // Deja la contraseña en blanco para ser cambiada
     setEditUserRole(user.rol);
@@ -291,8 +273,8 @@ const HomeRoute = () => {
       const hashedPassword = bcrypt.hashSync(editUserContrasena, salt);
   
       await db.runAsync(
-        'UPDATE usuarios SET correo = ?, contrasena = ?  WHERE id = ?',
-        [editUserCorreo, hashedPassword, editUserId]
+        'UPDATE usuarios SET nombre =?, apellido =?, correo = ?, contrasena = ?  WHERE id = ?',
+        [editUserNombre, editUserApellido, editUserCorreo, hashedPassword, editUserId]
       );
   
       Alert.alert("Éxito", "Usuario actualizado correctamente");
@@ -323,6 +305,20 @@ const HomeRoute = () => {
     <Modal visible={isEditUserModalVisible} onRequestClose={() => setIsEditUserModalVisible(false)}>
       <View style={styles.modalView}>
         <Text style={styles.modalText}>Editar Usuario</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Nombre(s)"
+          value={editUserNombre}
+          onChangeText={setEditUserNombre}
+          editable={true}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Apellido(s)"
+          value={editUserApellido}
+          onChangeText={setEditUserApellido}
+          editable={true}
+        />
         <TextInput
           style={styles.input}
           placeholder="Correo"
@@ -657,6 +653,10 @@ const saveEditedMachine = async () => {
           />
         </View>
       </View>
+      <View style={styles.greetingContainer}>
+        <Text style={styles.greetingText}>Bienvenido: {userNombre} </Text>
+        <Text style={styles.greetingDescription}>Aquí puedes gestionar tus usuarios asi como las máquinas.</Text>
+      </View>
       <ScrollView>
             <View style={styles.cardsContainerVertical}>
             <TouchableOpacity style={styles.cardTouchable} onPress={() => openModal('usuario')}>
@@ -718,9 +718,13 @@ const AddUserRoute = () => {
   const [confirmationText, setConfirmationText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [newUserNombre, setNewUserNombre] = useState('');
+  const [newUserApellido, setNewUserApellido] = useState('');
   const [newUserCorreo, setNewUserCorreo] = useState('');
   const [newUserContrasena, setNewUserContrasena] = useState('');
   const [editUserId, setEditUserId] = useState(null);
+  const [editUserNombre, setEditUserNombre] = useState('');
+  const [editUserApellido, setEditUserApellido] = useState('');
   const [editUserCorreo, setEditUserCorreo] = useState('');
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isEditPasswordValid, setIsEditPasswordValid] = useState(false);
@@ -734,7 +738,7 @@ const AddUserRoute = () => {
     const openDatabaseAndFetch = async () => {
       const database = await SQLite.openDatabaseAsync('indsense');
       setDb(database);
-      await createInitialUsers(database);
+      
     };
     openDatabaseAndFetch();
   }, []);
@@ -790,34 +794,7 @@ const AddUserRoute = () => {
     }
   };
 
-  const createInitialUsers = async (database) => {
-    const users = [
-      { id: 1, correo: 'spadmsenseindustrial@gmail.com', contrasena: '1Q2w3e4r5T', rol: 'superadmin' },
-      { id: 2, correo: 'admsenseindustrial@gmail.com', contrasena: '2W3e4r5t6Y', rol: 'admin' },
-      { id: 3, correo: 'crissg030800@gmail.com', contrasena: '3E4r5t6y7U', rol: 'usuario' }
-    ];
-
-    for (const user of users) {
-      try {
-        const existingUser = await database.getFirstAsync('SELECT * FROM usuarios WHERE correo = ?', [user.correo]);
-        if (existingUser) {
-          continue;
-        }
-
-        const salt = bcrypt.genSaltSync(10);
-        const hashedPassword = bcrypt.hashSync(user.contrasena, salt);
-
-        await database.runAsync(
-          'INSERT INTO usuarios (id, correo, contrasena, rol) VALUES (?, ?, ?, ?)',
-          [user.id, user.correo, hashedPassword, user.rol]
-        );
-      } catch (error) {
-        console.error("Error al crear usuario inicial: ", error);
-      }
-    }
-
-    fetchUsuarios(database);
-  };
+  
 
   const handleDeleteUser = async (id) => {
     if (!db) {
@@ -901,6 +878,8 @@ const AddUserRoute = () => {
 
   const handleCloseAddModal = () => {
     setModalAddVisible(false);
+    setNewUserNombre('');
+    setNewUserApellido('');
     setNewUserCorreo('');
     setNewUserContrasena('');
     setEditUserRole(''); // Restablece el rol
@@ -928,8 +907,8 @@ const AddUserRoute = () => {
         const hashedPassword = bcrypt.hashSync(newUserContrasena, salt);
 
         await db.runAsync(
-            'INSERT INTO usuarios (correo, contrasena, rol) VALUES (?, ?, ?)',
-            [newUserCorreo, hashedPassword, editUserRole]
+            'INSERT INTO usuarios (nombre, apellido, correo, contrasena, rol) VALUES (?, ?, ?, ?, ?)',
+            [newUserNombre, newUserApellido, newUserCorreo, hashedPassword, editUserRole]
         );
 
         Alert.alert("Éxito", "Usuario agregado correctamente");
@@ -944,6 +923,8 @@ const AddUserRoute = () => {
 
   const handleOpenEditModal = (usuario) => {
     setEditUserId(usuario.id);
+    setEditUserNombre(usuario.nombre);
+    setEditUserApellido(usuario.apellido);
     setEditUserCorreo(usuario.correo);
     setEditUserContrasena('');//Cambio
     setEditUserRole(usuario.rol);
@@ -952,6 +933,8 @@ const AddUserRoute = () => {
 
   const handleCloseEditModal = () => {
     setEditUserId(null);
+    setEditUserNombre('');
+    setEditUserApellido('');
     setEditUserCorreo('');
     setEditUserContrasena('');
     setEditUserRole('');
@@ -963,7 +946,7 @@ const AddUserRoute = () => {
       Alert.alert("Error", "No se pudo abrir la base de datos");
       return;
   }
-  if (!editUserCorreo || !editUserContrasena || !editUserRole) {
+  if (!editUserCorreo ||  !editUserRole) {
       Alert.alert("Error", "Por favor, llene todos los campos");
       return;
   }
@@ -980,8 +963,8 @@ const AddUserRoute = () => {
       const hashedPassword = bcrypt.hashSync(editUserContrasena, salt);
 
       await db.runAsync(
-          'UPDATE usuarios SET correo = ?, contrasena = ?, rol = ? WHERE id = ?',
-          [editUserCorreo, hashedPassword, editUserRole, editUserId]
+          'UPDATE usuarios SET nombre =?, apellido = ?, correo = ?, contrasena = ?, rol = ? WHERE id = ?',
+          [editUserNombre, editUserApellido, editUserCorreo, hashedPassword, editUserRole, editUserId]
       );
 
       Alert.alert("Éxito", "Usuario actualizado correctamente");
@@ -1059,6 +1042,18 @@ const handleRoleChange = (role) => {
           <Text style={styles.modalText}>Agregar Usuario</Text>
           <TextInput
             style={styles.input}
+            placeholder="Nombre(s)"
+            value={newUserNombre}
+            onChangeText={setNewUserNombre}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Apellido(s)"
+            value={newUserApellido}
+            onChangeText={setNewUserApellido}
+          />
+          <TextInput
+            style={styles.input}
             placeholder="Correo Electrónico"
             value={newUserCorreo}
             onChangeText={setNewUserCorreo}
@@ -1101,6 +1096,20 @@ const handleRoleChange = (role) => {
       >
         <View style={styles.modalView}>
           <Text style={styles.modalText}>Editar Usuario</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Nombre(s)"
+            value={editUserNombre}
+            onChangeText={setEditUserNombre}
+            editable={true}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Apellido(s)"
+            value={editUserApellido}
+            onChangeText={setEditUserApellido}
+            editable={true}
+          />
           <TextInput
             style={styles.input}
             placeholder="Correo"
@@ -1365,7 +1374,7 @@ const RequestRoute = () => {
   const fetchRequests = async (database) => {
     try {
       const data = await database.getAllAsync(
-        'SELECT solicitudes.id, solicitudes.mensaje, solicitudes.usuario_id, usuarios.correo FROM solicitudes JOIN usuarios ON solicitudes.usuario_id = usuarios.id'
+        'SELECT solicitudes.id, solicitudes.mensaje, solicitudes.usuario_id, usuarios.nombre, usuarios.apellido, usuarios.correo FROM solicitudes JOIN usuarios ON solicitudes.usuario_id = usuarios.id'
       );
       setRequests(data);
     } catch (error) {
@@ -1387,7 +1396,7 @@ const RequestRoute = () => {
   const fetchApprovedRequests = async (database) => {
     try {
       const data = await database.getAllAsync(
-        'SELECT * FROM solicitudesAprobadas'
+        'SELECT solicitudesAprobadas.id, solicitudesAprobadas.mensaje, solicitudesAprobadas.usuario_id, solicitudesAprobadas.ip_asignada, usuarios.nombre, usuarios.apellido, usuarios.correo FROM solicitudesAprobadas JOIN usuarios ON solicitudesAprobadas.usuario_id = usuarios.id'
       );
       setApprovedRequests(data);
     } catch (error) {
@@ -1466,7 +1475,8 @@ const RequestRoute = () => {
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
               <View style={styles.textContainerRequest}>
-                <Text style={styles.textRequest}>Usuario: {item.usuario_id}</Text>
+                <Text style={styles.textRequest}>Nombre: {item.nombre}</Text>
+                <Text style={styles.textRequest}>Apellidos: {item.apellido}</Text>
                 <Text style={styles.textRequest}>Correo: {item.correo}</Text>
                 <Text style={styles.textRequest}>Solicitud: {item.mensaje}</Text>
                 <Button
@@ -1510,8 +1520,9 @@ const RequestRoute = () => {
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
               <View style={styles.approvedRequestItem}>
-                <Text style={styles.textRequest}>Solicitud ID: {item.id}</Text>
-                <Text style={styles.textRequest}>Usuario ID: {item.usuario_id}</Text>
+                <Text style={styles.textRequest}>Número de Solicitud: {item.id}</Text>
+                <Text style={styles.textRequest}>Nombre: {item.nombre}</Text>
+                <Text style={styles.textRequest}>Apellidos: {item.apellido}</Text>
                 <Text style={styles.textRequest}>Mensaje: {item.mensaje}</Text>
                 <Text style={styles.textRequest}>IP Asignada: {item.ip_asignada}</Text>
               </View>
@@ -1525,9 +1536,9 @@ const RequestRoute = () => {
 
 const SettingsRoute = () => {
   const settingsOptions = [
+    { title: 'Mi perfil', icon: 'human' },
     { title: 'Privacidad', icon: 'shield-lock-outline' },
     { title: 'Políticas', icon: 'file-document-outline' },
-    { title: 'Accesibilidad', icon: 'human' },
     { title: 'Calificación', icon: 'star-outline' },
   ];
 
@@ -1739,6 +1750,20 @@ const styles = StyleSheet.create({
   },
   logoutIcon: {
     marginLeft: 16,
+  },
+  greetingContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    marginBottom: 45,
+  },
+  greetingText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  greetingDescription: {
+    fontSize: 14,
+    color: '#555',
   },
   segmentedButtons: {
     alignSelf: 'center',

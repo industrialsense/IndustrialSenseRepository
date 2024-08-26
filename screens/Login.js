@@ -33,13 +33,13 @@ export default function Login({ navigation }) {
         if (isValidPassword) {
           switch (result.rol) {
             case 'superadmin':
-              navigation.navigate('SuperAdmin');
+              navigation.navigate('SuperAdmin',{ userNombre: result.nombre, userID: result.id });
               break;
             case 'admin':
-              navigation.navigate('Admin');
+              navigation.navigate('Admin',{ userNombre: result.nombre, userID: result.id });
               break;
             case 'usuario':
-              navigation.navigate('User', { userEmail: result.correo, userID: result.id });
+              navigation.navigate('User', { userNombre: result.nombre, userID: result.id });
               break;
             default:
               Alert.alert("Error", "Rol desconocido");
